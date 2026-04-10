@@ -1,0 +1,635 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model (managed by Auth.js)
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // For credentials provider
+  role          UserRole  @default(USER)
+  position      String?   // Cargo/puesto del usuario
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts           Account[]
+  sessions           Session[]
+  projects           Project[]
+  quotations         Quotation[]
+  inventoryMovements InventoryMovement[]
+  bulkMovements      BulkMovement[]
+  permissions        UserPermission[]
+  assignedTasks      Task[]    @relation("TaskAssignee")
+  auditLogs          AuditLog[]
+
+  @@map("users")
+}
+
+// AuditLog - Registro de auditoria para acciones administrativas criticas
+model AuditLog {
+  id          String   @id @default(cuid())
+  module      String   // Modulo funcional: usuarios, inventario, etc.
+  action      String   // Tipo de accion: ROLE_CHANGED, USER_CREATED, etc.
+  entityType  String   // Tipo de entidad afectada: user, permission, etc.
+  entityId    String?  // ID de la entidad afectada (si aplica)
+  description String   @db.Text
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?  @db.Text
+  performedBy String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [performedBy], references: [id], onDelete: Restrict)
+
+  @@index([module])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([performedBy])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// UserPermission - Permisos granulares por modulo
+model UserPermission {
+  id        String   @id @default(cuid())
+  userId    String
+  module    String   // Nombre del modulo: dashboard, proyectos, clientes, etc.
+  canView   Boolean  @default(false)
+  canEdit   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, module])
+  @@index([userId])
+  @@map("user_permissions")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Client model
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  company   String?
+  email     String   @unique
+  phone     String?
+  address   String?
+  city      String?
+  country   String?
+  nit       String?  // NIT o documento de identificacion
+  notes     String?  @db.Text
+  rutUrl    String?  // URL del archivo RUT (para futuro)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  projects   Project[]
+  quotations Quotation[]
+
+  @@map("clients")
+}
+
+// Project model
+model Project {
+  id          String        @id @default(cuid())
+  title       String
+  description String        @db.Text
+  status      ProjectStatus @default(PROSPECT)
+  clientId    String
+  assignedTo  String
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Decimal?      @db.Decimal(10, 2)
+  priority    Priority      @default(MEDIUM)
+  tags        String[]      @default([])
+  notes       String?       @db.Text
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  client       Client      @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  assignedUser User        @relation(fields: [assignedTo], references: [id], onDelete: Restrict)
+  quotations   Quotation[]
+  tasks        Task[]
+
+  @@index([clientId])
+  @@index([assignedTo])
+  @@index([status])
+  @@map("projects")
+}
+
+// Task model (sub-tasks for projects)
+model Task {
+  id          String     @id @default(cuid())
+  projectId   String
+  title       String
+  description String?    @db.Text
+  status      TaskStatus @default(TODO)
+  assignedTo  String?
+  dueDate     DateTime?
+  priority    Priority   @default(MEDIUM)
+  completed   Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedUser User?   @relation("TaskAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([assignedTo])
+  @@map("tasks")
+}
+
+// Quotation model
+model Quotation {
+  id              String          @id @default(cuid())
+  quotationNumber String          @unique // QT-2026-0001
+  title           String
+  description     String?         @db.Text
+  clientId        String
+  projectId       String?
+  createdBy       String
+  status          QuotationStatus @default(DRAFT)
+  validUntil      DateTime
+  subtotal        Decimal         @db.Decimal(10, 2)
+  tax             Decimal         @db.Decimal(10, 2)
+  discount        Decimal         @default(0) @db.Decimal(10, 2)
+  total           Decimal         @db.Decimal(10, 2)
+  notes           String?         @db.Text
+  terms           String?         @db.Text
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  client        Client           @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  project       Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdByUser User             @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  items         QuotationItem[]
+  groups        QuotationGroup[]
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([createdBy])
+  @@map("quotations")
+}
+
+// Quotation items
+model QuotationItem {
+  id              String   @id @default(cuid())
+  quotationId     String
+  inventoryItemId String?  // Optional link to inventory item
+  description     String
+  quantity        Int
+  unitPrice       Decimal  @db.Decimal(10, 2)
+  total           Decimal  @db.Decimal(10, 2)
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  quotation     Quotation      @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+
+  @@index([quotationId])
+  @@index([inventoryItemId])
+  @@map("quotation_items")
+}
+
+// Quotation groups - Para agregar paquetes de equipos a cotizaciones
+model QuotationGroup {
+  id          String   @id @default(cuid())
+  quotationId String
+  groupId     String
+  name        String   // Nombre personalizado (puede ser diferente al original)
+  description String?  @db.Text
+  unitPrice   Decimal  @db.Decimal(10, 2) // Precio editable del grupo
+  quantity    Int      @default(1)
+  total       Decimal  @db.Decimal(10, 2)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  group     ItemGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+
+  @@index([quotationId])
+  @@index([groupId])
+  @@map("quotation_groups")
+}
+
+// Enums
+enum ProjectStatus {
+  PROSPECT     // Prospecto
+  IN_PROGRESS  // En progreso
+  ON_HOLD      // En pausa
+  COMPLETED    // Completado
+  CANCELLED    // Cancelado
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum QuotationStatus {
+  DRAFT    // Borrador
+  SENT     // Enviada
+  ACCEPTED // Aceptada
+  REJECTED // Rechazada
+  EXPIRED  // Expirada
+}
+
+enum UserRole {
+  SUPERADMIN // Solo camilo.vargas@xenith.com.co
+  ADMIN      // Administradores
+  USER       // Usuarios normales
+}
+
+// =============================================
+// INVENTORY SYSTEM ENUMS
+// =============================================
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum InventoryStatus {
+  IN          // En bodega
+  OUT         // Afuera (alquilado)
+  MAINTENANCE // En reparación
+  LOST        // No localizado
+}
+
+enum RfidTagStatus {
+  ENROLLED    // Registrado y vinculado
+  UNASSIGNED  // Registrado pero sin vincular
+  UNKNOWN     // Detectado pero no en sistema
+}
+
+enum InventoryType {
+  UNIT        // Item individual con RFID
+  CONTAINER   // Flight case con RFID
+  BULK        // Cantidad sin RFID
+}
+
+enum MovementType {
+  CHECK_IN
+  CHECK_OUT
+  ADJUSTMENT
+  ENROLLMENT
+  TRANSFER
+}
+
+// =============================================
+// INVENTORY SYSTEM MODELS
+// =============================================
+
+// Category model - Categorías dinámicas
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  color       String?  // Color hex para UI
+  icon        String?  // Nombre del icono
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+// Supplier model - Contratistas (antes Proveedores)
+model Supplier {
+  id          String   @id @default(cuid())
+  name        String
+  nit         String?  // NIT o documento de identificación
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  city        String?
+  country     String?
+  website     String?
+  notes       String?  @db.Text
+  rutUrl      String?  // URL del archivo RUT (para futuro)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  products ProductSupplier[]
+  concepts Concept[]
+
+  @@map("suppliers")
+}
+
+// Concept model - Conceptos de contratistas (servicios que ofrecen)
+model Concept {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  supplierId  String?  // Contratista asociado (opcional)
+  unitPrice   Decimal? @db.Decimal(10, 2) // Precio de referencia
+  category    String?  // Categoria del servicio: audio, iluminacion, catering, etc.
+  notes       String?  @db.Text
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  @@index([supplierId])
+  @@index([category])
+  @@map("concepts")
+}
+
+// Product model - Catálogo de productos (soft delete)
+model Product {
+  id          String        @id @default(cuid())
+  sku         String        @unique
+  name        String
+  description String?       @db.Text
+  categoryId  String
+  brand       String?
+  model       String?
+  status      ProductStatus @default(ACTIVE)
+  unitPrice   Decimal?      @db.Decimal(10, 2) // Precio de referencia
+  rentalPrice Decimal?      @db.Decimal(10, 2) // Precio de alquiler
+  imageUrl    String?
+  notes       String?       @db.Text
+  deletedAt   DateTime?     // Soft delete
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  category       Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  suppliers      ProductSupplier[]
+  inventoryItems InventoryItem[]
+  bulkInventory  BulkInventory?
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("products")
+}
+
+// ProductSupplier - Relación muchos a muchos producto-proveedor
+model ProductSupplier {
+  productId    String
+  supplierId   String
+  supplierSku  String?  // SKU del proveedor
+  cost         Decimal? @db.Decimal(10, 2)
+  isPreferred  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  // Relations
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@id([productId, supplierId])
+  @@map("product_suppliers")
+}
+
+// InventoryItem - Items físicos con RFID
+model InventoryItem {
+  id           String          @id @default(cuid())
+  productId    String
+  serialNumber String?         @unique
+  assetTag     String?         @unique // Etiqueta interna
+  type         InventoryType   @default(UNIT)
+  status       InventoryStatus @default(IN)
+  condition    String?         // Estado físico: Excelente, Bueno, Regular, Malo
+  location     String?         // Ubicación actual
+  containerId  String?         // ID del contenedor si está dentro de uno
+  purchaseDate DateTime?
+  purchasePrice Decimal?       @db.Decimal(10, 2)
+  warrantyExpiry DateTime?
+  notes        String?         @db.Text
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  // Relations
+  product        Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  container      InventoryItem?       @relation("ContainerContents", fields: [containerId], references: [id])
+  contents       InventoryItem[]      @relation("ContainerContents")
+  rfidTag        RfidTag?
+  movements      InventoryMovement[]
+  quotationItems QuotationItem[]
+  groups         ItemGroupItem[]
+
+  @@index([productId])
+  @@index([status])
+  @@index([containerId])
+  @@map("inventory_items")
+}
+
+// BulkInventory - Inventario por cantidad sin RFID
+model BulkInventory {
+  id          String   @id @default(cuid())
+  productId   String   @unique
+  quantity    Int      @default(0)
+  minQuantity Int?     // Alerta cuando baja de este nivel
+  location    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  movements BulkMovement[]
+
+  @@map("bulk_inventory")
+}
+
+// BulkMovement - Movimientos de inventario bulk
+model BulkMovement {
+  id              String       @id @default(cuid())
+  bulkInventoryId String
+  type            MovementType
+  quantity        Int          // Positivo para entrada, negativo para salida
+  previousQty     Int
+  newQty          Int
+  reason          String?
+  reference       String?      // Referencia externa (# orden, # proyecto)
+  performedBy     String
+  createdAt       DateTime     @default(now())
+
+  // Relations
+  bulkInventory BulkInventory @relation(fields: [bulkInventoryId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [performedBy], references: [id], onDelete: Restrict)
+
+  @@index([bulkInventoryId])
+  @@index([performedBy])
+  @@map("bulk_movements")
+}
+
+// RfidTag - Tags RFID
+model RfidTag {
+  id              String        @id @default(cuid())
+  epc             String        @unique // Electronic Product Code
+  tid             String?       // Tag ID (solo lectura)
+  inventoryItemId String?       @unique
+  status          RfidTagStatus @default(UNASSIGNED)
+  firstSeenAt     DateTime      @default(now())
+  lastSeenAt      DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  inventoryItem InventoryItem?  @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  detections    RfidDetection[]
+
+  @@index([status])
+  @@map("rfid_tags")
+}
+
+// RfidDetection - Log de detecciones RFID
+model RfidDetection {
+  id         String    @id @default(cuid())
+  rfidTagId  String
+  readerId   String
+  readerName String?
+  rssi       Int?      // Signal strength
+  direction  String?   // IN, OUT
+  timestamp  DateTime  @default(now())
+
+  // Relations
+  rfidTag RfidTag @relation(fields: [rfidTagId], references: [id], onDelete: Cascade)
+
+  @@index([rfidTagId])
+  @@index([readerId])
+  @@index([timestamp])
+  @@map("rfid_detections")
+}
+
+// InventoryMovement - Auditoría de movimientos de items
+model InventoryMovement {
+  id              String          @id @default(cuid())
+  inventoryItemId String
+  type            MovementType
+  fromStatus      InventoryStatus?
+  toStatus        InventoryStatus
+  fromLocation    String?
+  toLocation      String?
+  reason          String?
+  reference       String?         // Referencia externa
+  performedBy     String
+  createdAt       DateTime        @default(now())
+
+  // Relations
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [performedBy], references: [id], onDelete: Restrict)
+
+  @@index([inventoryItemId])
+  @@index([performedBy])
+  @@index([createdAt])
+  @@map("inventory_movements")
+}
+
+// =============================================
+// ITEM GROUPS (EQUIPMENT PACKAGES)
+// =============================================
+
+// ItemGroup - Grupos/Paquetes de equipos (ej: "Sistema de Audio Medio")
+model ItemGroup {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  items      ItemGroupItem[]
+  quotations QuotationGroup[]
+
+  @@map("item_groups")
+}
+
+// ItemGroupItem - Relación entre grupos y items de inventario
+model ItemGroupItem {
+  id              String   @id @default(cuid())
+  groupId         String
+  inventoryItemId String
+  quantity        Int      @default(1)
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  // Relations
+  group         ItemGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, inventoryItemId])
+  @@index([groupId])
+  @@index([inventoryItemId])
+  @@map("item_group_items")
+}

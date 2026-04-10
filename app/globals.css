@@ -1,0 +1,269 @@
+@import "tailwindcss";
+
+:root {
+  /* Primary Colors - Montevideo Convention Center (#E91E63) */
+  --color-primary: 233 30 99;     /* #E91E63 */
+  --color-primary-dark: 194 24 91; /* #C2185B */
+  --color-primary-light: 255 79 163; /* #FF4FA3 */
+
+  --color-secondary: 255 79 163;  /* #FF4FA3 */
+
+  /* Backgrounds */
+  --color-background: 15 15 15;   /* #0F0F0F */
+  --color-surface: 20 20 20;      /* #141414 */
+  --color-surface-hover: 28 28 28; /* #1C1C1C */
+
+  /* Text */
+  --color-text: 237 237 237;       /* off-white */
+  --color-text-muted: 163 163 163; /* gray-400 */
+
+  /* Borders */
+  --color-border: 32 32 32;        /* subtle border */
+  --color-border-focus: 233 30 99; /* pink on focus */
+
+  /* Status Colors */
+  --color-success: 16 185 129;   /* green-500 */
+  --color-warning: 245 158 11;   /* amber-500 */
+  --color-error: 239 68 68;      /* red-500 */
+
+  /* Spacing */
+  --spacing-navbar: 4rem;
+  --spacing-sidebar: 16rem;
+
+  /* Animations */
+  --animation-fast: 150ms;
+  --animation-normal: 250ms;
+  --animation-slow: 350ms;
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Shadows */
+  --shadow-glow: 0 0 20px rgba(233, 30, 99, 0.25);
+}
+
+@theme inline {
+  /* Map to Tailwind colors */
+  --color-background: rgb(var(--color-background));
+  --color-foreground: rgb(var(--color-text));
+  --color-primary: rgb(var(--color-primary));
+  --color-surface: rgb(var(--color-surface));
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-text));
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glassmorphism Effect */
+.glass {
+  background: rgba(20, 20, 20, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(233, 30, 99, 0.15);
+}
+
+.glass-strong {
+  background: rgba(20, 20, 20, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(233, 30, 99, 0.25);
+}
+
+/* Gradient Backgrounds */
+.gradient-primary {
+  background: linear-gradient(135deg, rgb(233, 30, 99) 0%, rgb(255, 79, 163) 100%);
+}
+
+.gradient-radial {
+  background: radial-gradient(circle at center, rgb(233, 30, 99) 0%, transparent 70%);
+}
+
+/* Hover Glow Effect */
+.hover-glow {
+  transition: box-shadow var(--animation-normal) ease;
+}
+
+.hover-glow:hover {
+  box-shadow: var(--shadow-glow);
+}
+
+/* Text Gradient */
+.text-gradient {
+  background: linear-gradient(135deg, rgb(233, 30, 99), rgb(255, 79, 163));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Animated Border */
+@keyframes border-pulse {
+  0%, 100% {
+    border-color: rgba(233, 30, 99, 0.25);
+  }
+  50% {
+    border-color: rgba(233, 30, 99, 0.7);
+  }
+}
+
+.border-pulse {
+  animation: border-pulse 2s ease-in-out infinite;
+}
+
+/* Smooth Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--color-background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-surface-hover));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--color-primary));
+}
+
+/* Focus Styles */
+*:focus-visible {
+  outline: 2px solid rgb(var(--color-primary));
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: rgba(233, 30, 99, 0.25);
+  color: rgb(var(--color-text));
+}
+
+/* ===========================
+   LIGHT THEME OVERRIDES
+   =========================== */
+
+[data-theme="light"] {
+  background-color: #EBEBED !important;
+  color: #0F172A;
+}
+
+/* Layout */
+[data-theme="light"] aside {
+  background-color: #FFFFFF !important;
+  border-right-color: #D1D5DB !important;
+}
+
+[data-theme="light"] header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-bottom-color: #D1D5DB !important;
+}
+
+[data-theme="light"] main {
+  background-color: #EBEBED;
+}
+
+/* Glass cards — fondo blanco con sombra sutil para profundidad */
+[data-theme="light"] .glass {
+  background: rgba(255, 255, 255, 0.97) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0,0,0,0.04) !important;
+}
+
+[data-theme="light"] .glass-strong {
+  background: #FFFFFF !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ---- Texto: contraste elevado ---- */
+/* Títulos / texto primario */
+[data-theme="light"] .text-gray-100,
+[data-theme="light"] .text-gray-200,
+[data-theme="light"] .text-zinc-200 {
+  color: #0F172A !important;
+}
+
+/* Texto secundario */
+[data-theme="light"] .text-gray-300 {
+  color: #1E293B !important;
+}
+
+/* Texto de soporte / labels */
+[data-theme="light"] .text-gray-400,
+[data-theme="light"] .text-zinc-400 {
+  color: #475569 !important;
+}
+
+/* Texto muted — sigue legible */
+[data-theme="light"] .text-gray-500,
+[data-theme="light"] .text-zinc-500 {
+  color: #64748B !important;
+}
+
+[data-theme="light"] .text-gray-600,
+[data-theme="light"] .text-zinc-600 {
+  color: #334155 !important;
+}
+
+/* Sidebar nav items inactivos */
+[data-theme="light"] aside .text-zinc-500 {
+  color: #64748B !important;
+}
+
+[data-theme="light"] aside .hover\:text-zinc-200:hover {
+  color: #0F172A !important;
+}
+
+/* ---- Fondos de superficies ---- */
+[data-theme="light"] .bg-gray-950 { background-color: #FFFFFF !important; }
+[data-theme="light"] .bg-gray-900 { background-color: #F8FAFC !important; }
+[data-theme="light"] .bg-gray-800 { background-color: #F1F5F9 !important; }
+
+/* ---- Bordes ---- */
+[data-theme="light"] .border-gray-800 { border-color: #CBD5E1 !important; }
+[data-theme="light"] .border-gray-700 { border-color: #94A3B8 !important; }
+[data-theme="light"] .border-white\/5 { border-color: #D1D5DB !important; }
+[data-theme="light"] .border-white\/10 { border-color: #CBD5E1 !important; }
+
+/* ---- Hover states ---- */
+[data-theme="light"] .hover\:bg-gray-800:hover { background-color: #F1F5F9 !important; }
+[data-theme="light"] .hover\:bg-gray-900:hover { background-color: #F8FAFC !important; }
+[data-theme="light"] .hover\:bg-white\/5:hover { background-color: rgba(0, 0, 0, 0.05) !important; }
+
+/* ---- Sidebar active state sigue igual (pink) ---- */
+
+/* ---- Inputs: legibles sobre fondo claro ---- */
+[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  background-color: #FFFFFF !important;
+  border-color: #94A3B8 !important;
+  color: #0F172A !important;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+/* Labels de formularios */
+[data-theme="light"] label {
+  color: #1E293B !important;
+}
+
+/* Scrollbar */
+[data-theme="light"] ::-webkit-scrollbar-track { background: #EBEBED; }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: #94A3B8; }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #E91E63; }

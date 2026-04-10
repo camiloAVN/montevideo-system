@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: montevideo_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: xenith_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - montevideo_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  montevideo_postgres_data:
