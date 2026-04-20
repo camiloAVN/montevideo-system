@@ -313,6 +313,12 @@ export function QuotationModernDocument({ quotation, config }: Props) {
             <View style={styles.metaBlock}>
               <Text style={styles.metaLabel}>EMPRESA EMISORA</Text>
               <Text style={styles.metaValue}>{config.companyName}</Text>
+              {config.companyNit ? (
+                <Text style={styles.metaValueSub}>NIT: {config.companyNit}</Text>
+              ) : null}
+              {config.companyPhone ? (
+                <Text style={styles.metaValueSub}>Tel: {config.companyPhone}</Text>
+              ) : null}
               <Text style={styles.metaValueSub}>{config.companyEmail}</Text>
             </View>
           </View>

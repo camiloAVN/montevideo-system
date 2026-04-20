@@ -32,7 +32,7 @@ export function Footer() {
           <div className="col-span-1 md:col-span-2">
             <Link href="/inicio" className="inline-flex items-center space-x-2 group mb-4">
               <Image
-                src="/images/logo_motevideo.png"
+                src="/images/logos/logo_motevideo.png"
                 alt="Logo"
                 width={0}
                 height={0}

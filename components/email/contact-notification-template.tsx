@@ -61,7 +61,7 @@ export function ContactNotificationTemplate({
                 <tr>
                   <td align="center">
                     <Img
-                      src={`${appUrl}/images/logo_motevideo.png`}
+                      src={`${appUrl}/images/logos/logo_motevideo.png`}
                       alt="Logo"
                       width={220}
                       height={80}

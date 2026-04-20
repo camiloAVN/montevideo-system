@@ -1,59 +1,85 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Moon,
   Sun,
   Palette,
   FileText,
   RotateCcw,
-  Upload,
   ImageIcon,
   Type,
   Building2,
   Check,
+  Save,
 } from 'lucide-react'
 import { useThemeStore } from '@/store/themeStore'
 import { usePDFTemplateStore } from '@/store/pdfTemplateStore'
-import { DEFAULT_PDF_CONFIG } from '@/lib/pdf/types'
+import { DEFAULT_PDF_CONFIG, PDFTemplateConfig } from '@/lib/pdf/types'
 import { cn } from '@/lib/utils/cn'
 import toast from 'react-hot-toast'
 
 const INPUT_CLASS =
   'w-full px-3 py-2 rounded-lg bg-gray-900/50 border border-gray-700 text-gray-200 text-sm focus:outline-none focus:border-pink-600 transition-colors'
 
+const AVAILABLE_LOGOS = [
+  { url: '/images/logos/logo_motevideo.png', label: 'Logo Original' },
+  { url: '/images/logos/Logo_Montevideo_CC_2026_Blanco.png', label: 'Blanco' },
+  { url: '/images/logos/Logo_Montevideo_CC_2026_Color_&_Blanco.png', label: 'Color y Blanco' },
+  { url: '/images/logos/Logo_Montevideo_CC_2026_Color_&_Negro.png', label: 'Color y Negro' },
+  { url: '/images/logos/Logo_Montevideo_CC_2026_Negro.png', label: 'Negro' },
+]
+
 export default function ConfiguracionPage() {
   const { theme, setTheme } = useThemeStore()
   const { config, setConfig, resetConfig } = usePDFTemplateStore()
-  const [uploadingLogo, setUploadingLogo] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploadingLogo(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const res = await fetch('/api/uploads/products', { method: 'POST', body: formData })
-      if (!res.ok) throw new Error()
-      const data = await res.json()
-      setConfig({ logoUrl: data.url })
-      toast.success('Logo actualizado')
-    } catch {
-      toast.error('Error al subir el logo')
-    } finally {
-      setUploadingLogo(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    }
+  const [draft, setDraft] = useState<PDFTemplateConfig>(config)
+
+  // Sync draft when store loads from localStorage on first render
+  useEffect(() => {
+    setDraft(config)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(config)
+
+  const updateDraft = (partial: Partial<PDFTemplateConfig>) =>
+    setDraft((prev) => ({ ...prev, ...partial }))
+
+  const handleSave = () => {
+    setConfig(draft)
+    toast.success('Configuración guardada')
+  }
+
+  const handleReset = () => {
+    resetConfig()
+    setDraft(DEFAULT_PDF_CONFIG)
+    toast.success('Configuración restablecida')
   }
 
   return (
     <div className="max-w-3xl space-y-8">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-100 mb-1">Configuración</h1>
-        <p className="text-gray-400 text-sm">Personaliza la experiencia del sistema.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-100 mb-1">Configuración</h1>
+          <p className="text-gray-400 text-sm">Personaliza la experiencia del sistema.</p>
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={!isDirty}
+          className={cn(
+            'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shrink-0',
+            isDirty
+              ? 'bg-pink-600 hover:bg-pink-500 text-white shadow-lg shadow-pink-600/20'
+              : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+          )}
+        >
+          <Save className="w-4 h-4" />
+          {isDirty ? 'Guardar cambios' : 'Sin cambios'}
+        </button>
       </div>
 
       {/* ── Apariencia ─────────────────────────────────────── */}
@@ -170,17 +196,15 @@ export default function ConfiguracionPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Classic */}
             <button
-              onClick={() => setConfig({ template: 'classic' })}
+              onClick={() => updateDraft({ template: 'classic' })}
               className={cn(
                 'flex flex-col items-start gap-3 rounded-xl p-4 border-2 transition-all duration-200 text-left',
-                config.template === 'classic'
+                draft.template === 'classic'
                   ? 'border-pink-600 bg-pink-600/5'
                   : 'border-gray-700 hover:border-gray-600 bg-gray-900/30'
               )}
             >
-              {/* Classic preview */}
               <div className="w-full h-28 rounded-lg overflow-hidden bg-white border border-black/10 flex flex-col">
-                {/* Header */}
                 <div className="flex justify-between items-start px-2.5 pt-2.5 pb-2 border-b-2 border-pink-500">
                   <div className="flex flex-col gap-1">
                     <div className="w-10 h-2 rounded-sm bg-pink-500/70" />
@@ -193,7 +217,6 @@ export default function ConfiguracionPage() {
                     <div className="w-10 h-1 rounded-sm bg-gray-200" />
                   </div>
                 </div>
-                {/* Table */}
                 <div className="flex-1 px-2 pt-1.5 flex flex-col gap-0.5">
                   <div className="w-full h-2.5 rounded-sm bg-gray-100 border-b border-pink-400/40" />
                   <div className="w-full h-2 bg-white border-b border-gray-100" />
@@ -203,13 +226,12 @@ export default function ConfiguracionPage() {
                   </div>
                 </div>
               </div>
-
               <div className="flex items-center justify-between w-full">
                 <div>
                   <p className="font-semibold text-gray-100 text-sm">Clásico</p>
                   <p className="text-xs text-gray-500 mt-0.5">Diseño limpio con encabezado empresarial</p>
                 </div>
-                {config.template === 'classic' && (
+                {draft.template === 'classic' && (
                   <span className="shrink-0 w-5 h-5 rounded-full bg-pink-600 flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" strokeWidth={3} />
                   </span>
@@ -219,17 +241,15 @@ export default function ConfiguracionPage() {
 
             {/* Modern */}
             <button
-              onClick={() => setConfig({ template: 'modern' })}
+              onClick={() => updateDraft({ template: 'modern' })}
               className={cn(
                 'flex flex-col items-start gap-3 rounded-xl p-4 border-2 transition-all duration-200 text-left',
-                config.template === 'modern'
+                draft.template === 'modern'
                   ? 'border-pink-600 bg-pink-600/5'
                   : 'border-gray-700 hover:border-gray-600 bg-gray-900/30'
               )}
             >
-              {/* Modern preview */}
               <div className="w-full h-28 rounded-lg overflow-hidden bg-white border border-black/10 flex flex-col">
-                {/* Colored header band */}
                 <div className="h-8 w-full bg-pink-600 flex items-center justify-between px-2.5">
                   <div className="flex flex-col gap-0.5">
                     <div className="w-10 h-1.5 rounded-sm bg-white/60" />
@@ -240,9 +260,7 @@ export default function ConfiguracionPage() {
                     <div className="w-10 h-2 rounded-sm bg-white/80" />
                   </div>
                 </div>
-                {/* Body */}
                 <div className="flex-1 px-2 pt-1.5 flex flex-col gap-0.5">
-                  {/* Meta strip */}
                   <div className="flex gap-3 mb-1 pb-1 border-b border-gray-100">
                     <div className="flex flex-col gap-0.5">
                       <div className="w-6 h-0.5 rounded bg-gray-200" />
@@ -253,7 +271,6 @@ export default function ConfiguracionPage() {
                       <div className="w-10 h-1 rounded-sm bg-gray-300" />
                     </div>
                   </div>
-                  {/* Table */}
                   <div className="w-full h-2 rounded-sm bg-gray-800" />
                   <div className="w-full h-1.5 bg-white border-b border-gray-100" />
                   <div className="w-full h-1.5 bg-gray-50 border-b border-gray-100" />
@@ -262,13 +279,12 @@ export default function ConfiguracionPage() {
                   </div>
                 </div>
               </div>
-
               <div className="flex items-center justify-between w-full">
                 <div>
                   <p className="font-semibold text-gray-100 text-sm">Moderno</p>
                   <p className="text-xs text-gray-500 mt-0.5">Encabezado sólido con color de marca</p>
                 </div>
-                {config.template === 'modern' && (
+                {draft.template === 'modern' && (
                   <span className="shrink-0 w-5 h-5 rounded-full bg-pink-600 flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" strokeWidth={3} />
                   </span>
@@ -285,53 +301,42 @@ export default function ConfiguracionPage() {
             <p className="text-sm font-medium text-gray-200">Logo del PDF</p>
           </div>
           <p className="text-sm text-gray-400 mb-4">
-            Aparece en el encabezado de las cotizaciones. PNG o JPG recomendado, fondo transparente.
+            Selecciona el logo que aparecerá en el encabezado de las cotizaciones.
           </p>
 
-          <div className="flex items-center gap-4">
-            {/* Preview */}
-            <div className="w-28 h-12 rounded-lg border border-gray-700 bg-white/5 flex items-center justify-center overflow-hidden shrink-0">
-              {config.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={config.logoUrl}
-                  alt="Logo actual"
-                  className="max-h-10 max-w-[100px] object-contain"
-                />
-              ) : (
-                <ImageIcon className="w-6 h-6 text-gray-600" />
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={handleLogoUpload}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingLogo}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-200 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 hover:border-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                {uploadingLogo ? 'Subiendo...' : 'Cambiar logo'}
-              </button>
-              {config.logoUrl !== DEFAULT_PDF_CONFIG.logoUrl && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {AVAILABLE_LOGOS.map((logo) => {
+              const isSelected = draft.logoUrl === logo.url
+              return (
                 <button
-                  onClick={() => {
-                    setConfig({ logoUrl: DEFAULT_PDF_CONFIG.logoUrl })
-                    toast.success('Logo restablecido')
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors"
+                  key={logo.url}
+                  onClick={() => updateDraft({ logoUrl: logo.url })}
+                  className={cn(
+                    'flex flex-col items-center gap-2 rounded-xl p-3 border-2 transition-all duration-200',
+                    isSelected
+                      ? 'border-pink-600 bg-pink-600/5'
+                      : 'border-gray-700 hover:border-gray-600 bg-gray-900/30'
+                  )}
                 >
-                  <RotateCcw className="w-3 h-3" />
-                  Restablecer logo original
+                  <div className="w-full h-14 rounded-lg bg-gray-800 flex items-center justify-center overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={logo.url}
+                      alt={logo.label}
+                      className="max-h-10 max-w-full object-contain"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs text-gray-400 truncate">{logo.label}</span>
+                    {isSelected && (
+                      <span className="shrink-0 w-4 h-4 rounded-full bg-pink-600 flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                      </span>
+                    )}
+                  </div>
                 </button>
-              )}
-            </div>
+              )
+            })}
           </div>
         </div>
 
@@ -349,16 +354,16 @@ export default function ConfiguracionPage() {
               <div className="flex items-center gap-2">
                 <input
                   type="color"
-                  value={config.primaryColor}
-                  onChange={(e) => setConfig({ primaryColor: e.target.value })}
+                  value={draft.primaryColor}
+                  onChange={(e) => updateDraft({ primaryColor: e.target.value })}
                   className="w-9 h-9 rounded-lg border border-gray-700 cursor-pointer bg-transparent"
                 />
                 <input
                   type="text"
-                  value={config.primaryColor}
+                  value={draft.primaryColor}
                   onChange={(e) => {
                     const val = e.target.value
-                    if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) setConfig({ primaryColor: val })
+                    if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) updateDraft({ primaryColor: val })
                   }}
                   maxLength={7}
                   className={cn(INPUT_CLASS, 'font-mono uppercase')}
@@ -372,16 +377,16 @@ export default function ConfiguracionPage() {
               <div className="flex items-center gap-2">
                 <input
                   type="color"
-                  value={config.accentColor}
-                  onChange={(e) => setConfig({ accentColor: e.target.value })}
+                  value={draft.accentColor}
+                  onChange={(e) => updateDraft({ accentColor: e.target.value })}
                   className="w-9 h-9 rounded-lg border border-gray-700 cursor-pointer bg-transparent"
                 />
                 <input
                   type="text"
-                  value={config.accentColor}
+                  value={draft.accentColor}
                   onChange={(e) => {
                     const val = e.target.value
-                    if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) setConfig({ accentColor: val })
+                    if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) updateDraft({ accentColor: val })
                   }}
                   maxLength={7}
                   className={cn(INPUT_CLASS, 'font-mono uppercase')}
@@ -404,9 +409,9 @@ export default function ConfiguracionPage() {
             <div>
               <label className="text-xs text-gray-400 mb-2 block">Fuente</label>
               <select
-                value={config.fontFamily}
+                value={draft.fontFamily}
                 onChange={(e) =>
-                  setConfig({ fontFamily: e.target.value as typeof config.fontFamily })
+                  updateDraft({ fontFamily: e.target.value as PDFTemplateConfig['fontFamily'] })
                 }
                 className={INPUT_CLASS}
               >
@@ -418,7 +423,7 @@ export default function ConfiguracionPage() {
 
             <div>
               <label className="text-xs text-gray-400 mb-2 block">
-                Tamaño base — <span className="text-gray-300 font-medium">{config.baseFontSize}pt</span>
+                Tamaño base — <span className="text-gray-300 font-medium">{draft.baseFontSize}pt</span>
               </label>
               <div className="flex items-center gap-3">
                 <span className="text-xs text-gray-500">8</span>
@@ -427,8 +432,8 @@ export default function ConfiguracionPage() {
                   min={8}
                   max={14}
                   step={1}
-                  value={config.baseFontSize}
-                  onChange={(e) => setConfig({ baseFontSize: Number(e.target.value) })}
+                  value={draft.baseFontSize}
+                  onChange={(e) => updateDraft({ baseFontSize: Number(e.target.value) })}
                   className="flex-1 accent-pink-600"
                 />
                 <span className="text-xs text-gray-500">14</span>
@@ -452,8 +457,8 @@ export default function ConfiguracionPage() {
               <label className="text-xs text-gray-400 mb-1.5 block">Nombre de la empresa</label>
               <input
                 type="text"
-                value={config.companyName}
-                onChange={(e) => setConfig({ companyName: e.target.value })}
+                value={draft.companyName}
+                onChange={(e) => updateDraft({ companyName: e.target.value })}
                 className={INPUT_CLASS}
                 placeholder="Montevideo Convention Center"
               />
@@ -462,19 +467,41 @@ export default function ConfiguracionPage() {
               <label className="text-xs text-gray-400 mb-1.5 block">Eslogan / descripción</label>
               <input
                 type="text"
-                value={config.companyTagline}
-                onChange={(e) => setConfig({ companyTagline: e.target.value })}
+                value={draft.companyTagline}
+                onChange={(e) => updateDraft({ companyTagline: e.target.value })}
                 className={INPUT_CLASS}
                 placeholder="Centro de Eventos y Convenciones"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
+                <label className="text-xs text-gray-400 mb-1.5 block">NIT</label>
+                <input
+                  type="text"
+                  value={draft.companyNit ?? ''}
+                  onChange={(e) => updateDraft({ companyNit: e.target.value })}
+                  className={INPUT_CLASS}
+                  placeholder="900.123.456-7"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1.5 block">Teléfono</label>
+                <input
+                  type="text"
+                  value={draft.companyPhone ?? ''}
+                  onChange={(e) => updateDraft({ companyPhone: e.target.value })}
+                  className={INPUT_CLASS}
+                  placeholder="+57 300 000 0000"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
                 <label className="text-xs text-gray-400 mb-1.5 block">Email</label>
                 <input
                   type="email"
-                  value={config.companyEmail}
-                  onChange={(e) => setConfig({ companyEmail: e.target.value })}
+                  value={draft.companyEmail}
+                  onChange={(e) => updateDraft({ companyEmail: e.target.value })}
                   className={INPUT_CLASS}
                   placeholder="info@empresa.com"
                 />
@@ -483,8 +510,8 @@ export default function ConfiguracionPage() {
                 <label className="text-xs text-gray-400 mb-1.5 block">Sitio web</label>
                 <input
                   type="text"
-                  value={config.companyWebsite}
-                  onChange={(e) => setConfig({ companyWebsite: e.target.value })}
+                  value={draft.companyWebsite}
+                  onChange={(e) => updateDraft({ companyWebsite: e.target.value })}
                   className={INPUT_CLASS}
                   placeholder="www.empresa.com"
                 />
@@ -493,17 +520,28 @@ export default function ConfiguracionPage() {
           </div>
         </div>
 
-        {/* Reset */}
-        <div className="flex justify-end">
+        {/* Footer actions */}
+        <div className="flex items-center justify-between">
           <button
-            onClick={() => {
-              resetConfig()
-              toast.success('Configuración de PDF restablecida')
-            }}
+            onClick={handleReset}
             className="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 hover:border-gray-600 rounded-lg transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Restablecer valores por defecto
+          </button>
+
+          <button
+            onClick={handleSave}
+            disabled={!isDirty}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+              isDirty
+                ? 'bg-pink-600 hover:bg-pink-500 text-white shadow-lg shadow-pink-600/20'
+                : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+            )}
+          >
+            <Save className="w-4 h-4" />
+            Guardar cambios
           </button>
         </div>
       </section>

@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { productSchema, ProductFormData, Product } from '@/lib/validations/product'
@@ -8,8 +7,6 @@ import { Category } from '@/lib/validations/category'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
-import { ImagePicker } from '@/components/ui/ImagePicker'
-import { ImagePreviewModal } from '@/components/ui/ImagePreviewModal'
 
 interface ProductFormProps {
   product?: Product | null
@@ -26,13 +23,9 @@ export function ProductForm({
   onCancel,
   isSubmitting = false,
 }: ProductFormProps) {
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -54,8 +47,6 @@ export function ProductForm({
           status: 'ACTIVE',
         },
   })
-
-  const currentImageUrl = watch('imageUrl')
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -135,23 +126,7 @@ export function ProductForm({
           {...register('rentalPrice', { valueAsNumber: true })}
         />
 
-        <div className="md:col-span-2">
-          <ImagePicker
-            value={currentImageUrl}
-            onChange={(value) => setValue('imageUrl', value || '')}
-            onPreview={() => setIsPreviewOpen(true)}
-            error={errors.imageUrl?.message}
-            disabled={isSubmitting}
-          />
-        </div>
       </div>
-
-      <ImagePreviewModal
-        isOpen={isPreviewOpen}
-        onClose={() => setIsPreviewOpen(false)}
-        imageUrl={currentImageUrl || null}
-        alt="Preview del producto"
-      />
 
       <Textarea
         label="Descripción"

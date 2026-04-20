@@ -27,7 +27,7 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/inicio" className="flex items-center space-x-2 group">
             <Image
-              src="/images/logo_motevideo.png"
+              src="/images/logos/logo_motevideo.png"
               alt="Logo"
               width={0}
               height={0}

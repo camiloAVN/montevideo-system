@@ -15,8 +15,6 @@ import {
   Package,
   Boxes,
   Tags,
-  Radio,
-  ArrowRightLeft,
   FolderTree,
   Package2,
   UsersRound,
@@ -110,16 +108,16 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       module: 'grupos',
     },
     {
-      name: 'RFID',
-      href: '/dashboard/inventario/rfid',
-      icon: Radio,
-      module: 'rfid',
+      name: 'Categorias',
+      href: '/dashboard/categorias',
+      icon: FolderTree,
+      module: 'categorias',
     },
     {
-      name: 'Movimientos',
-      href: '/dashboard/inventario/movimientos',
-      icon: ArrowRightLeft,
-      module: 'movimientos',
+      name: 'Historial',
+      href: '/dashboard/historial',
+      icon: History,
+      module: 'historial',
     },
   ]
 
@@ -138,20 +136,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     },
   ]
 
-  const configNavigation: NavItem[] = [
-    {
-      name: 'Categorias',
-      href: '/dashboard/categorias',
-      icon: FolderTree,
-      module: 'categorias',
-    },
-    {
-      name: 'Historial',
-      href: '/dashboard/historial',
-      icon: History,
-      module: 'historial',
-    },
-  ]
+  const configNavigation: NavItem[] = []
 
   // Filtrar items según permisos
   const filterByPermission = (items: NavItem[]) => {
@@ -222,7 +207,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           <div className="flex h-20 items-center justify-between px-6 border-b border-white/5">
             <Link href="/dashboard" className="flex items-center space-x-2">
               <Image
-                src="/images/logo_motevideo.png"
+                src="/images/logos/logo_motevideo.png"
                 alt="Logo"
                 width={0}
                 height={0}

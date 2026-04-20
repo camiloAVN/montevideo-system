@@ -255,9 +255,13 @@ export function QuotationClassicDocument({ quotation, config }: Props) {
               <Text style={styles.companyName}>{config.companyName}</Text>
             )}
             <Text style={styles.companyInfo}>
-              {config.companyTagline}{'\n'}
-              {config.companyEmail}{'\n'}
-              {config.companyWebsite}
+              {[
+                config.companyTagline,
+                config.companyNit ? `NIT: ${config.companyNit}` : null,
+                config.companyPhone ? `Tel: ${config.companyPhone}` : null,
+                config.companyEmail,
+                config.companyWebsite,
+              ].filter(Boolean).join('\n')}
             </Text>
           </View>
           <View style={styles.quotationInfo}>
