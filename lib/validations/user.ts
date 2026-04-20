@@ -20,6 +20,8 @@ export const systemModules = [
   'conceptos',
   'categorias',
   'historial',
+  'calendario',
+  'agenda',
 ] as const
 
 export type SystemModule = typeof systemModules[number]
@@ -41,6 +43,8 @@ export const moduleLabels: Record<SystemModule, string> = {
   conceptos: 'Conceptos',
   categorias: 'Categorias',
   historial: 'Historial',
+  calendario: 'Calendario',
+  agenda: 'Agenda',
 }
 
 // Agrupacion de modulos para la UI
@@ -49,6 +53,7 @@ export const moduleGroups = {
   inventario: ['inventario', 'productos', 'items', 'grupos', 'rfid', 'movimientos'],
   terceros: ['contratistas', 'conceptos'],
   configuracion: ['categorias', 'historial'],
+  agenda: ['calendario', 'agenda'],
 } as const
 
 export const moduleGroupLabels: Record<keyof typeof moduleGroups, string> = {
@@ -56,6 +61,7 @@ export const moduleGroupLabels: Record<keyof typeof moduleGroups, string> = {
   inventario: 'Inventario',
   terceros: 'Terceros',
   configuracion: 'Configuracion',
+  agenda: 'Agenda',
 }
 
 // Schema de permisos

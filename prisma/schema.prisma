@@ -34,6 +34,7 @@ model User {
   permissions        UserPermission[]
   assignedTasks      Task[]    @relation("TaskAssignee")
   auditLogs          AuditLog[]
+  calendarEvents     CalendarEvent[]
 
   @@map("users")
 }
@@ -669,4 +670,26 @@ model ItemGroupItem {
   @@index([groupId])
   @@index([inventoryItemId])
   @@map("item_group_items")
+}
+
+// CalendarEvent - Eventos del calendario/agenda
+model CalendarEvent {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  notes       String?   @db.Text
+  start       DateTime
+  end         DateTime?
+  allDay      Boolean   @default(false)
+  color       String    @default("#E91E63")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String?
+
+  // Relations
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([start])
+  @@index([createdById])
+  @@map("calendar_events")
 }

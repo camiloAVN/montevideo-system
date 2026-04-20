@@ -24,6 +24,8 @@ import {
   History,
   Mail,
   Settings,
+  CalendarDays,
+  CalendarRange,
   LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
@@ -138,6 +140,21 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   const configNavigation: NavItem[] = []
 
+  const agendaNavigation: NavItem[] = [
+    {
+      name: 'Calendario',
+      href: '/dashboard/calendario',
+      icon: CalendarDays,
+      module: 'calendario',
+    },
+    {
+      name: 'Agenda',
+      href: '/dashboard/agenda',
+      icon: CalendarRange,
+      module: 'agenda',
+    },
+  ]
+
   // Filtrar items según permisos
   const filterByPermission = (items: NavItem[]) => {
     return items.filter((item) => canView(item.module))
@@ -147,6 +164,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const filteredInventory = filterByPermission(inventoryNavigation)
   const filteredTerceros = filterByPermission(tercerosNavigation)
   const filteredConfig = filterByPermission(configNavigation)
+  const filteredAgenda = filterByPermission(agendaNavigation)
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -274,6 +292,23 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                       filteredTerceros,
                       'bg-violet-500/10 text-violet-400',
                       'border border-violet-500/20'
+                    )}
+                  </>
+                )}
+
+                {/* Agenda Section */}
+                {filteredAgenda.length > 0 && (
+                  <>
+                    <div className="mt-6 mb-2 px-4">
+                      <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest flex items-center gap-2">
+                        <CalendarDays className="w-3 h-3" />
+                        Agenda
+                      </p>
+                    </div>
+                    {renderNavList(
+                      filteredAgenda,
+                      'bg-sky-500/10 text-sky-400',
+                      'border border-sky-500/20'
                     )}
                   </>
                 )}
