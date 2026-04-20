@@ -15,6 +15,17 @@ export const quotationGroupSchema = z.object({
   quantity: z.number().min(1, 'La cantidad debe ser al menos 1'),
 })
 
+export const quotationConceptSchema = z.object({
+  conceptId: z.string().min(1, 'El concepto es requerido'),
+  name: z.string().min(1, 'El nombre es requerido'),
+  description: z.string().optional().nullable(),
+  basePrice: z.number().min(0, 'El precio base debe ser positivo'),
+  markupType: z.enum(['PERCENTAGE', 'FIXED_AMOUNT']),
+  markupValue: z.number().min(0, 'El valor de ganancia debe ser positivo'),
+  unitPrice: z.number().min(0, 'El precio final debe ser positivo'),
+  quantity: z.number().min(1, 'La cantidad debe ser al menos 1'),
+})
+
 export const quotationSchemaBase = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
   description: z.string().optional(),
@@ -28,18 +39,45 @@ export const quotationSchemaBase = z.object({
   terms: z.string().optional(),
   items: z.array(quotationItemSchema),
   groups: z.array(quotationGroupSchema),
+  conceptItems: z.array(quotationConceptSchema),
 })
 
 export const quotationSchema = quotationSchemaBase.refine(
-  (data) => data.items.length > 0 || data.groups.length > 0,
-  { message: 'Debes agregar al menos un item o grupo', path: ['items'] }
+  (data) => data.items.length > 0 || data.groups.length > 0 || data.conceptItems.length > 0,
+  { message: 'Debes agregar al menos un item, grupo o concepto de contratista', path: ['items'] }
 )
 
 export type QuotationItemFormData = z.infer<typeof quotationItemSchema>
 export type QuotationGroupFormData = z.infer<typeof quotationGroupSchema>
+export type QuotationConceptFormData = z.infer<typeof quotationConceptSchema>
 export type QuotationFormData = z.infer<typeof quotationSchemaBase>
 
 export type QuotationStatus = 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED'
+
+export type QuotationConceptItem = {
+  id: string
+  quotationId: string
+  conceptId: string
+  name: string
+  description: string | null
+  basePrice: number
+  markupType: 'PERCENTAGE' | 'FIXED_AMOUNT'
+  markupValue: number
+  unitPrice: number
+  quantity: number
+  total: number
+  order: number
+  createdAt: Date
+  updatedAt: Date
+  concept?: {
+    id: string
+    name: string
+    supplier?: {
+      id: string
+      name: string
+    } | null
+  }
+}
 
 export type QuotationItem = {
   id: string
@@ -145,6 +183,7 @@ export type Quotation = {
   }
   items: QuotationItem[]
   groups?: QuotationGroupItem[]
+  conceptItems?: QuotationConceptItem[]
 }
 
 export const statusLabels: Record<QuotationStatus, string> = {

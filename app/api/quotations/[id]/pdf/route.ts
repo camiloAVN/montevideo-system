@@ -110,6 +110,9 @@ export async function GET(
             },
           },
         },
+        conceptItems: {
+          orderBy: { order: 'asc' },
+        },
       },
     })
 

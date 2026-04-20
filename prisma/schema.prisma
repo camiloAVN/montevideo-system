@@ -225,6 +225,7 @@ model Quotation {
   createdByUser User             @relation(fields: [createdBy], references: [id], onDelete: Restrict)
   items         QuotationItem[]
   groups        QuotationGroup[]
+  conceptItems  QuotationConcept[]
 
   @@index([clientId])
   @@index([projectId])
@@ -275,6 +276,41 @@ model QuotationGroup {
   @@index([quotationId])
   @@index([groupId])
   @@map("quotation_groups")
+}
+
+enum MarkupType {
+  PERCENTAGE   // Porcentaje sobre precio base del contratista
+  FIXED_AMOUNT // Monto fijo a añadir sobre el precio base
+}
+
+// QuotationConcept - Conceptos de contratistas en cotizaciones
+model QuotationConcept {
+  id          String     @id @default(cuid())
+  quotationId String
+  conceptId   String
+
+  // Snapshot del concepto al momento de agregar
+  name        String
+  description String?    @db.Text
+
+  // Precios
+  basePrice   Decimal    @db.Decimal(10, 2) // Precio del contratista
+  markupType  MarkupType @default(PERCENTAGE)
+  markupValue Decimal    @default(0) @db.Decimal(10, 2) // % o monto fijo de ganancia
+  unitPrice   Decimal    @db.Decimal(10, 2) // Precio final al cliente
+  quantity    Int        @default(1)
+  total       Decimal    @db.Decimal(10, 2)
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  concept   Concept   @relation(fields: [conceptId], references: [id], onDelete: Restrict)
+
+  @@index([quotationId])
+  @@index([conceptId])
+  @@map("quotation_concepts")
 }
 
 // Enums
@@ -407,7 +443,8 @@ model Concept {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  supplier          Supplier?          @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  quotationConcepts QuotationConcept[]
 
   @@index([supplierId])
   @@index([category])

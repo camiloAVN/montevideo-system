@@ -17,8 +17,17 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { Plus, Trash2, Search, Package, Package2, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Trash2, Search, Package, Package2, X, ChevronDown, ChevronUp, Briefcase } from 'lucide-react'
 import { format, addDays } from 'date-fns'
+
+type ConceptWithSupplier = {
+  id: string
+  name: string
+  description: string | null
+  unitPrice: number | null
+  category: string | null
+  supplier?: { id: string; name: string; contactName?: string | null } | null
+}
 
 interface QuotationFormProps {
   quotation?: Quotation | null
@@ -45,11 +54,14 @@ export function QuotationForm({
   const [projects, setProjects] = useState<any[]>([])
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [itemGroups, setItemGroups] = useState<ItemGroup[]>([])
+  const [concepts, setConcepts] = useState<ConceptWithSupplier[]>([])
   const [loadingData, setLoadingData] = useState(true)
   const [showItemSearch, setShowItemSearch] = useState(false)
   const [showGroupSearch, setShowGroupSearch] = useState(false)
+  const [showConceptSearch, setShowConceptSearch] = useState(false)
   const [itemSearch, setItemSearch] = useState('')
   const [groupSearch, setGroupSearch] = useState('')
+  const [conceptSearch, setConceptSearch] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
 
   const defaultValidUntil = format(addDays(new Date(), 30), 'yyyy-MM-dd')
@@ -88,6 +100,16 @@ export function QuotationForm({
             unitPrice: Number(g.unitPrice),
             quantity: g.quantity,
           })) || [],
+          conceptItems: quotation.conceptItems?.map((c) => ({
+            conceptId: c.conceptId,
+            name: c.name,
+            description: c.description || '',
+            basePrice: Number(c.basePrice),
+            markupType: c.markupType,
+            markupValue: Number(c.markupValue),
+            unitPrice: Number(c.unitPrice),
+            quantity: c.quantity,
+          })) || [],
         }
       : {
           status: 'DRAFT' as QuotationStatus,
@@ -96,6 +118,7 @@ export function QuotationForm({
           tax: '19',
           items: [],
           groups: [],
+          conceptItems: [],
         },
   })
 
@@ -109,8 +132,14 @@ export function QuotationForm({
     name: 'groups',
   })
 
+  const { fields: conceptFields, append: appendConcept, remove: removeConcept } = useFieldArray({
+    control,
+    name: 'conceptItems',
+  })
+
   const watchedItems = watch('items')
   const watchedGroups = watch('groups')
+  const watchedConceptItems = watch('conceptItems')
   const watchedDiscount = watch('discount')
   const watchedTax = watch('tax')
 
@@ -127,7 +156,13 @@ export function QuotationForm({
     return acc + qty * price
   }, 0) || 0
 
-  const subtotal = itemsSubtotal + groupsSubtotal
+  const conceptsSubtotal = watchedConceptItems?.reduce((acc, concept) => {
+    const qty = Number(concept.quantity) || 0
+    const price = Number(concept.unitPrice) || 0
+    return acc + qty * price
+  }, 0) || 0
+
+  const subtotal = itemsSubtotal + groupsSubtotal + conceptsSubtotal
   const discount = Number(watchedDiscount) || 0
   const taxRate = Number(watchedTax) || 19
   const subtotalAfterDiscount = subtotal - discount
@@ -137,11 +172,12 @@ export function QuotationForm({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [clientsRes, projectsRes, inventoryRes, groupsRes] = await Promise.all([
+        const [clientsRes, projectsRes, inventoryRes, groupsRes, conceptsRes] = await Promise.all([
           fetch('/api/clients'),
           fetch('/api/projects'),
           fetch('/api/inventory?status=IN'),
           fetch('/api/item-groups'),
+          fetch('/api/concepts?isActive=true'),
         ])
 
         if (clientsRes.ok) {
@@ -162,6 +198,11 @@ export function QuotationForm({
         if (groupsRes.ok) {
           const groupsData = await groupsRes.json()
           setItemGroups(groupsData)
+        }
+
+        if (conceptsRes.ok) {
+          const conceptsData = await conceptsRes.json()
+          setConcepts(conceptsData)
         }
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -221,6 +262,29 @@ export function QuotationForm({
     setGroupSearch('')
   }
 
+  const calculateConceptUnitPrice = (basePrice: number, markupType: string, markupValue: number): number => {
+    if (markupType === 'PERCENTAGE') {
+      return basePrice + basePrice * (markupValue / 100)
+    }
+    return basePrice + markupValue
+  }
+
+  const handleAddConcept = (concept: ConceptWithSupplier) => {
+    const basePrice = concept.unitPrice ? Number(concept.unitPrice) : 0
+    appendConcept({
+      conceptId: concept.id,
+      name: concept.name,
+      description: concept.description || '',
+      basePrice,
+      markupType: 'PERCENTAGE',
+      markupValue: 0,
+      unitPrice: basePrice,
+      quantity: 1,
+    })
+    setShowConceptSearch(false)
+    setConceptSearch('')
+  }
+
   const toggleGroupExpanded = (index: number) => {
     const newExpanded = new Set(expandedGroups)
     if (newExpanded.has(index)) {
@@ -267,6 +331,17 @@ export function QuotationForm({
   const availableGroups = filteredGroups.filter(
     group => !addedGroupIds.includes(group.id)
   )
+
+  const filteredConcepts = concepts.filter(concept => {
+    if (!conceptSearch) return true
+    const searchLower = conceptSearch.toLowerCase()
+    return (
+      concept.name?.toLowerCase().includes(searchLower) ||
+      concept.description?.toLowerCase().includes(searchLower) ||
+      concept.supplier?.name?.toLowerCase().includes(searchLower) ||
+      concept.category?.toLowerCase().includes(searchLower)
+    )
+  })
 
   // Get group details for displaying items
   const getGroupDetails = (groupId: string) => {
@@ -531,6 +606,174 @@ export function QuotationForm({
           </Card.Content>
         </Card>
 
+        {/* Contractor Concepts Section */}
+        <Card>
+          <Card.Header>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-violet-400" />
+                  Conceptos de Contratistas
+                </h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  Agrega servicios de contratistas con margen de ganancia
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowConceptSearch(true)}
+              >
+                <Briefcase className="w-4 h-4 mr-2" />
+                Agregar Concepto
+              </Button>
+            </div>
+          </Card.Header>
+          <Card.Content>
+            {conceptFields.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <Briefcase className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                <p>No hay conceptos de contratistas agregados</p>
+                <p className="text-sm mt-1">Haz clic en &quot;Agregar Concepto&quot; para incluir un servicio</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {conceptFields.map((field, index) => {
+                  const basePrice = Number(watchedConceptItems?.[index]?.basePrice) || 0
+                  const markupType = watchedConceptItems?.[index]?.markupType || 'PERCENTAGE'
+                  const markupValue = Number(watchedConceptItems?.[index]?.markupValue) || 0
+                  const qty = Number(watchedConceptItems?.[index]?.quantity) || 1
+                  const unitPrice = calculateConceptUnitPrice(basePrice, markupType, markupValue)
+                  const conceptTotal = qty * unitPrice
+
+                  return (
+                    <div
+                      key={field.id}
+                      className="rounded-lg border bg-violet-500/5 border-violet-500/20 p-4"
+                    >
+                      <div className="grid grid-cols-12 gap-4">
+                        {/* Nombre */}
+                        <div className="col-span-12 md:col-span-5">
+                          <div className="flex items-center gap-2 mb-1">
+                            <label className="block text-sm font-medium text-gray-300">
+                              Concepto
+                            </label>
+                            <span className="px-2 py-0.5 rounded text-xs bg-violet-500/20 text-violet-400">
+                              Servicio
+                            </span>
+                          </div>
+                          <Input
+                            placeholder="Nombre del concepto"
+                            {...register(`conceptItems.${index}.name`)}
+                          />
+                          <input type="hidden" {...register(`conceptItems.${index}.conceptId`)} />
+                          <input type="hidden" {...register(`conceptItems.${index}.description`)} />
+                        </div>
+
+                        {/* Cantidad */}
+                        <div className="col-span-4 md:col-span-1">
+                          <Input
+                            label="Cant."
+                            type="number"
+                            min="1"
+                            step="1"
+                            {...register(`conceptItems.${index}.quantity`, { valueAsNumber: true })}
+                          />
+                        </div>
+
+                        {/* Precio base (contratista) */}
+                        <div className="col-span-4 md:col-span-2">
+                          <Input
+                            label="Precio base"
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="0"
+                            {...register(`conceptItems.${index}.basePrice`, {
+                              valueAsNumber: true,
+                              onChange: (e) => {
+                                const newBase = Number(e.target.value) || 0
+                                const newUnitPrice = calculateConceptUnitPrice(newBase, markupType, markupValue)
+                                setValue(`conceptItems.${index}.unitPrice`, newUnitPrice)
+                              },
+                            })}
+                          />
+                        </div>
+
+                        {/* Tipo de ganancia */}
+                        <div className="col-span-4 md:col-span-2">
+                          <Select
+                            label="Ganancia"
+                            options={[
+                              { value: 'PERCENTAGE', label: '% Porcentaje' },
+                              { value: 'FIXED_AMOUNT', label: '$ Monto fijo' },
+                            ]}
+                            {...register(`conceptItems.${index}.markupType`, {
+                              onChange: (e) => {
+                                const newType = e.target.value
+                                const newUnitPrice = calculateConceptUnitPrice(basePrice, newType, markupValue)
+                                setValue(`conceptItems.${index}.unitPrice`, newUnitPrice)
+                              },
+                            })}
+                          />
+                        </div>
+
+                        {/* Valor de ganancia */}
+                        <div className="col-span-4 md:col-span-2">
+                          <Input
+                            label={markupType === 'PERCENTAGE' ? 'Valor (%)' : 'Valor ($)'}
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0"
+                            {...register(`conceptItems.${index}.markupValue`, {
+                              valueAsNumber: true,
+                              onChange: (e) => {
+                                const newMarkup = Number(e.target.value) || 0
+                                const newUnitPrice = calculateConceptUnitPrice(basePrice, markupType, newMarkup)
+                                setValue(`conceptItems.${index}.unitPrice`, newUnitPrice)
+                              },
+                            })}
+                          />
+                        </div>
+
+                        {/* Botón eliminar */}
+                        <div className="col-span-12 md:col-span-12 flex items-center gap-4 pt-2 border-t border-violet-500/10">
+                          <div className="flex-1 grid grid-cols-3 gap-4 text-sm">
+                            <div className="text-center">
+                              <span className="text-gray-500 block text-xs">Precio base</span>
+                              <span className="text-gray-300">{formatCurrency(basePrice)}</span>
+                            </div>
+                            <div className="text-center">
+                              <span className="text-gray-500 block text-xs">Precio al cliente</span>
+                              <span className="text-violet-300 font-medium">{formatCurrency(unitPrice)}</span>
+                              <input type="hidden" {...register(`conceptItems.${index}.unitPrice`, { valueAsNumber: true })} />
+                            </div>
+                            <div className="text-center">
+                              <span className="text-gray-500 block text-xs">Total</span>
+                              <span className="text-green-400 font-medium">{formatCurrency(conceptTotal)}</span>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            onClick={() => removeConcept(index)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </Card.Content>
+        </Card>
+
         {/* Items */}
         <Card>
           <Card.Header>
@@ -702,6 +945,12 @@ export function QuotationForm({
                   <div className="flex justify-between items-center py-2 text-sm">
                     <span className="text-gray-400">Grupos ({groupFields.length})</span>
                     <span className="text-cyan-400">{formatCurrency(groupsSubtotal)}</span>
+                  </div>
+                )}
+                {conceptsSubtotal > 0 && (
+                  <div className="flex justify-between items-center py-2 text-sm">
+                    <span className="text-gray-400">Servicios ({conceptFields.length})</span>
+                    <span className="text-violet-400">{formatCurrency(conceptsSubtotal)}</span>
                   </div>
                 )}
                 {itemsSubtotal > 0 && (
@@ -978,6 +1227,112 @@ export function QuotationForm({
 
             <div className="p-4 border-t border-gray-800 flex justify-end">
               <Button variant="outline" onClick={() => setShowGroupSearch(false)}>
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Concept Search Modal */}
+      {showConceptSearch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowConceptSearch(false)}
+          />
+          <div className="relative bg-gray-900 rounded-xl border border-gray-800 w-full max-w-3xl max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold flex items-center gap-2">
+                  <Briefcase className="w-6 h-6 text-violet-400" />
+                  Agregar Concepto de Contratista
+                </h3>
+                <p className="text-gray-400 text-sm mt-1">
+                  Busca por nombre del concepto o por contratista
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowConceptSearch(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            <div className="p-4 border-b border-gray-800">
+              <Input
+                placeholder="Buscar por concepto o por contratista..."
+                value={conceptSearch}
+                onChange={(e) => setConceptSearch(e.target.value)}
+                leftIcon={<Search className="w-4 h-4" />}
+                autoFocus
+              />
+            </div>
+
+            <div className="p-4 overflow-y-auto max-h-[50vh]">
+              {filteredConcepts.length > 0 ? (
+                <div className="space-y-2">
+                  {filteredConcepts.map((concept) => (
+                    <div
+                      key={concept.id}
+                      className="p-4 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors cursor-pointer border border-transparent hover:border-violet-500/30"
+                      onClick={() => handleAddConcept(concept)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium">{concept.name}</p>
+                            {concept.supplier && (
+                              <span className="px-2 py-0.5 rounded-full text-xs bg-violet-500/20 text-violet-400">
+                                {concept.supplier.name}
+                              </span>
+                            )}
+                            {concept.category && (
+                              <span className="px-2 py-0.5 rounded-full text-xs bg-gray-700 text-gray-400">
+                                {concept.category}
+                              </span>
+                            )}
+                          </div>
+                          {concept.description && (
+                            <p className="text-gray-400 text-sm mt-1 line-clamp-2">
+                              {concept.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right ml-4 shrink-0">
+                          {concept.unitPrice != null ? (
+                            <>
+                              <p className="font-semibold text-violet-300">
+                                {formatCurrency(Number(concept.unitPrice))}
+                              </p>
+                              <p className="text-xs text-gray-500">precio base</p>
+                            </>
+                          ) : (
+                            <p className="text-xs text-gray-500">sin precio</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Briefcase className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400">No hay conceptos disponibles</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {conceptSearch
+                      ? 'No se encontraron conceptos con ese criterio de busqueda'
+                      : 'No hay conceptos activos creados'
+                    }
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-gray-800 flex justify-end">
+              <Button variant="outline" onClick={() => setShowConceptSearch(false)}>
                 Cerrar
               </Button>
             </div>

@@ -99,6 +99,20 @@ export async function GET(
             },
           },
         },
+        conceptItems: {
+          orderBy: { order: 'asc' },
+          include: {
+            concept: {
+              select: {
+                id: true,
+                name: true,
+                supplier: {
+                  select: { id: true, name: true },
+                },
+              },
+            },
+          },
+        },
       },
     })
 
@@ -171,6 +185,25 @@ export async function PUT(
       }
     })
 
+    // Process concept items
+    const conceptItems = (validatedData.conceptItems || []).map((concept, index) => {
+      const conceptTotal = new Decimal(concept.quantity).times(new Decimal(concept.unitPrice))
+      subtotal = subtotal.plus(conceptTotal)
+
+      return {
+        conceptId: concept.conceptId,
+        name: concept.name,
+        description: concept.description || null,
+        basePrice: new Decimal(concept.basePrice),
+        markupType: concept.markupType,
+        markupValue: new Decimal(concept.markupValue),
+        unitPrice: new Decimal(concept.unitPrice),
+        quantity: concept.quantity,
+        total: conceptTotal,
+        order: items.length + groups.length + index,
+      }
+    })
+
     const discount = validatedData.discount ? new Decimal(validatedData.discount) : new Decimal(0)
     const taxRate = validatedData.tax ? new Decimal(validatedData.tax) : new Decimal(16)
 
@@ -178,11 +211,14 @@ export async function PUT(
     const tax = subtotalAfterDiscount.times(taxRate).dividedBy(100)
     const total = subtotalAfterDiscount.plus(tax)
 
-    // Delete existing items and groups
+    // Delete existing items, groups and concept items
     await prisma.quotationItem.deleteMany({
       where: { quotationId: id },
     })
     await prisma.quotationGroup.deleteMany({
+      where: { quotationId: id },
+    })
+    await prisma.quotationConcept.deleteMany({
       where: { quotationId: id },
     })
 
@@ -206,6 +242,9 @@ export async function PUT(
         },
         groups: {
           create: groups,
+        },
+        conceptItems: {
+          create: conceptItems,
         },
       },
       include: {
@@ -285,6 +324,20 @@ export async function PUT(
                       },
                     },
                   },
+                },
+              },
+            },
+          },
+        },
+        conceptItems: {
+          orderBy: { order: 'asc' },
+          include: {
+            concept: {
+              select: {
+                id: true,
+                name: true,
+                supplier: {
+                  select: { id: true, name: true },
                 },
               },
             },

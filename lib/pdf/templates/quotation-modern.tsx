@@ -158,6 +158,14 @@ function makeStyles(config: PDFTemplateConfig) {
       paddingLeft: 8,
       lineHeight: 1.4,
     },
+    conceptBadge: {
+      fontSize: fs - 4,
+      color: '#7c3aed',
+      backgroundColor: '#ede9fe',
+      padding: '2 4',
+      borderRadius: 2,
+      marginTop: 2,
+    },
     // ── Totals ───────────────────────────────────────────────────────────────
     totalsWrapper: { alignItems: 'flex-end', marginTop: 8 },
     totalsBox: {
@@ -248,7 +256,7 @@ export function QuotationModernDocument({ quotation, config }: Props) {
       .join(', ')
   }
 
-  const allLineItems: { type: 'item' | 'group'; data: any; order: number }[] = []
+  const allLineItems: { type: 'item' | 'group' | 'concept'; data: any; order: number }[] = []
   if (quotation.items) {
     quotation.items.forEach((item: any) => {
       allLineItems.push({ type: 'item', data: item, order: item.order || 0 })
@@ -257,6 +265,11 @@ export function QuotationModernDocument({ quotation, config }: Props) {
   if (quotation.groups) {
     quotation.groups.forEach((group: any) => {
       allLineItems.push({ type: 'group', data: group, order: group.order || 0 })
+    })
+  }
+  if (quotation.conceptItems) {
+    quotation.conceptItems.forEach((concept: any) => {
+      allLineItems.push({ type: 'concept', data: concept, order: concept.order || 0 })
     })
   }
   allLineItems.sort((a, b) => a.order - b.order)
@@ -356,7 +369,7 @@ export function QuotationModernDocument({ quotation, config }: Props) {
                     <Text style={styles.tableCol5}>{formatCurrency(Number(item.total))}</Text>
                   </View>
                 )
-              } else {
+              } else if (lineItem.type === 'group') {
                 const group = lineItem.data
                 const groupItemsList = getGroupItemsList(group)
                 return (
@@ -375,6 +388,23 @@ export function QuotationModernDocument({ quotation, config }: Props) {
                     <Text style={styles.tableCol3}>{group.quantity}</Text>
                     <Text style={styles.tableCol4}>{formatCurrency(Number(group.unitPrice))}</Text>
                     <Text style={styles.tableCol5}>{formatCurrency(Number(group.total))}</Text>
+                  </View>
+                )
+              } else {
+                const concept = lineItem.data
+                return (
+                  <View key={`concept-${concept.id}`} style={rowStyle}>
+                    <Text style={styles.tableCol1}>{index + 1}</Text>
+                    <View style={styles.tableCol2}>
+                      <Text style={styles.itemDescription}>{concept.name}</Text>
+                      {concept.description && (
+                        <Text style={styles.itemDetails}>{concept.description}</Text>
+                      )}
+                      <Text style={styles.conceptBadge}>SERVICIO</Text>
+                    </View>
+                    <Text style={styles.tableCol3}>{concept.quantity}</Text>
+                    <Text style={styles.tableCol4}>{formatCurrency(Number(concept.unitPrice))}</Text>
+                    <Text style={styles.tableCol5}>{formatCurrency(Number(concept.total))}</Text>
                   </View>
                 )
               }
