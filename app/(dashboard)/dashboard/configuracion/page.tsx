@@ -338,6 +338,38 @@ export default function ConfiguracionPage() {
               )
             })}
           </div>
+
+          <div className="mt-5 pt-5 border-t border-gray-700/50">
+            <label className="text-xs text-gray-400 mb-3 block">
+              Tamaño del logo — <span className="text-gray-300 font-medium">{draft.logoWidth ?? 120}px</span>
+            </label>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-500 shrink-0">60</span>
+              <input
+                type="range"
+                min={60}
+                max={220}
+                step={5}
+                value={draft.logoWidth ?? 120}
+                onChange={(e) => updateDraft({ logoWidth: Number(e.target.value) })}
+                className="flex-1 accent-pink-600"
+              />
+              <span className="text-xs text-gray-500 shrink-0">220</span>
+              <input
+                type="number"
+                min={60}
+                max={220}
+                step={5}
+                value={draft.logoWidth ?? 120}
+                onChange={(e) => {
+                  const val = Math.min(220, Math.max(60, Number(e.target.value)))
+                  updateDraft({ logoWidth: val })
+                }}
+                className="w-16 px-2 py-1.5 rounded-lg bg-gray-900/50 border border-gray-700 text-gray-200 text-sm text-center focus:outline-none focus:border-pink-600 transition-colors"
+              />
+              <span className="text-xs text-gray-500">px</span>
+            </div>
+          </div>
         </div>
 
         {/* Colors */}

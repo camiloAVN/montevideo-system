@@ -1,6 +1,7 @@
 export interface PDFTemplateConfig {
   template: 'classic' | 'modern'
   logoUrl: string
+  logoWidth: number
   primaryColor: string
   accentColor: string
   fontFamily: 'Helvetica' | 'Times-Roman' | 'Courier'
@@ -16,6 +17,7 @@ export interface PDFTemplateConfig {
 export const DEFAULT_PDF_CONFIG: PDFTemplateConfig = {
   template: 'classic',
   logoUrl: '/images/logos/logo_motevideo.png',
+  logoWidth: 120,
   primaryColor: '#E91E63',
   accentColor: '#FF4FA3',
   fontFamily: 'Helvetica',

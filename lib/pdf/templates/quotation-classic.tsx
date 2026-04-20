@@ -23,8 +23,8 @@ function makeStyles(config: PDFTemplateConfig) {
     },
     logoBlock: { flexDirection: 'column' },
     logoImage: {
-      width: 120,
-      height: 36,
+      width: config.logoWidth ?? 120,
+      height: Math.round((config.logoWidth ?? 120) * 0.3),
       objectFit: 'contain',
       marginBottom: 6,
     },
