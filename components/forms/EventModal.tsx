@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X, Trash2, Calendar, Clock } from 'lucide-react'
@@ -35,6 +35,7 @@ export function EventModal({
     reset,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
@@ -49,6 +50,7 @@ export function EventModal({
     },
   })
 
+  // Reset form when modal opens with a new context
   useEffect(() => {
     if (event) {
       reset({
@@ -65,6 +67,7 @@ export function EventModal({
         title: '',
         description: '',
         notes: '',
+        // defaultStart always arrives as 'YYYY-MM-DDTHH:mm' (datetime-local)
         start: defaultStart ?? '',
         end: defaultEnd ?? '',
         allDay: false,
@@ -75,6 +78,27 @@ export function EventModal({
 
   const selectedColor = watch('color')
   const allDay = watch('allDay')
+
+  // Track previous allDay to detect changes
+  const prevAllDayRef = useRef(allDay)
+
+  useEffect(() => {
+    if (prevAllDayRef.current === allDay) return
+    prevAllDayRef.current = allDay
+
+    const startVal = getValues('start')
+    const endVal = getValues('end')
+
+    if (allDay) {
+      // Switching TO all-day: keep only the date part (YYYY-MM-DD)
+      if (startVal) setValue('start', startVal.slice(0, 10))
+      if (endVal) setValue('end', endVal.slice(0, 10))
+    } else {
+      // Switching FROM all-day: append a default time so datetime-local input shows correctly
+      if (startVal?.length === 10) setValue('start', `${startVal}T09:00`)
+      if (endVal?.length === 10) setValue('end', `${endVal}T10:00`)
+    }
+  }, [allDay, getValues, setValue])
 
   if (!isOpen) return null
 
@@ -237,13 +261,14 @@ export function EventModal({
   )
 }
 
-// Converts an ISO string to a local datetime-local or date input value
+// Converts a stored ISO/date string to the correct input format
 function toLocalInput(iso: string, allDay: boolean): string {
-  const d = new Date(iso)
   if (allDay) {
-    return d.toISOString().slice(0, 10)
+    // For all-day events stored as UTC midnight, take the UTC date directly
+    return iso.slice(0, 10)
   }
-  // Format: YYYY-MM-DDTHH:mm
+  // For timed events, convert to local time for datetime-local input
+  const d = new Date(iso)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }

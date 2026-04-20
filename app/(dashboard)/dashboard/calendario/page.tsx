@@ -61,27 +61,33 @@ export default function CalendarioPage() {
   }
 
   const handleDateClick = (info: DateClickArg) => {
+    // Always pass datetime-local format so the input works correctly.
+    // When clicking in month/all-day rows, dateStr is 'YYYY-MM-DD' — add a default time.
     const start = info.allDay
-      ? info.dateStr
+      ? `${info.dateStr}T09:00`
       : info.dateStr.slice(0, 16)
     openCreate(start)
   }
 
   const handleSelect = (info: { startStr: string; endStr: string; allDay: boolean }) => {
-    openCreate(
-      info.allDay ? info.startStr : info.startStr.slice(0, 16),
-      info.allDay ? info.endStr : info.endStr.slice(0, 16)
-    )
+    const start = info.allDay
+      ? `${info.startStr}T09:00`
+      : info.startStr.slice(0, 16)
+    const end = info.allDay
+      ? `${info.endStr}T10:00`
+      : info.endStr.slice(0, 16)
+    openCreate(start, end)
   }
 
   const handleSave = async (data: EventFormData) => {
     setIsSubmitting(true)
     try {
+      const payload = withDefaultEnd(data)
       if (selectedEvent) {
         const res = await fetch(`/api/events/${selectedEvent.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error()
         const updated = await res.json()
@@ -91,7 +97,7 @@ export default function CalendarioPage() {
         const res = await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error()
         const created = await res.json()
@@ -224,8 +230,9 @@ export default function CalendarioPage() {
           events={events.map((e) => ({
             id: e.id,
             title: e.title,
-            start: e.start,
-            end: e.end ?? undefined,
+            // For all-day events pass date-only strings to avoid UTC timezone shift
+            start: e.allDay ? e.start.slice(0, 10) : e.start,
+            end: e.allDay && e.end ? e.end.slice(0, 10) : (e.end ?? undefined),
             allDay: e.allDay,
             backgroundColor: e.color,
             borderColor: e.color,
@@ -259,6 +266,24 @@ export default function CalendarioPage() {
       />
     </div>
   )
+}
+
+// If end is missing, default to start + 1 hour (timed) or same day (all-day)
+function withDefaultEnd(data: EventFormData): EventFormData {
+  if (data.end && data.end.trim() !== '') return data
+  if (!data.start) return data
+
+  if (data.allDay) {
+    // For all-day events keep end equal to start (single day)
+    return { ...data, end: data.start }
+  }
+
+  // For timed events, add 1 hour
+  const d = new Date(data.start)
+  d.setHours(d.getHours() + 1)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const end = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return { ...data, end }
 }
 
 function toFCEvent(e: any): CalendarEvent {

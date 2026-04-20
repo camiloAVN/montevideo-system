@@ -58,11 +58,12 @@ export default function AgendaPage() {
   const handleSave = async (data: EventFormData) => {
     setIsSubmitting(true)
     try {
+      const payload = withDefaultEnd(data)
       if (selectedEvent) {
         const res = await fetch(`/api/events/${selectedEvent.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error()
         const updated = await res.json()
@@ -72,7 +73,7 @@ export default function AgendaPage() {
         const res = await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error()
         const created = await res.json()
@@ -206,6 +207,21 @@ export default function AgendaPage() {
       />
     </div>
   )
+}
+
+function withDefaultEnd(data: EventFormData): EventFormData {
+  if (data.end && data.end.trim() !== '') return data
+  if (!data.start) return data
+
+  if (data.allDay) {
+    return { ...data, end: data.start }
+  }
+
+  const d = new Date(data.start)
+  d.setHours(d.getHours() + 1)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const end = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return { ...data, end }
 }
 
 function toFCEvent(e: any): CalendarEvent {
