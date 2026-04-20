@@ -26,6 +26,12 @@ import {
   Settings,
   CalendarDays,
   CalendarRange,
+  UtensilsCrossed,
+  ShoppingBasket,
+  Layers,
+  BookOpen,
+  UserCheck,
+  Archive,
   LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
@@ -138,6 +144,45 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     },
   ]
 
+  const cateringNavigation: NavItem[] = [
+    {
+      name: 'Proveedores',
+      href: '/dashboard/catering/proveedores',
+      icon: ShoppingBasket,
+      module: 'catering-proveedores',
+    },
+    {
+      name: 'Items',
+      href: '/dashboard/catering/items',
+      icon: Layers,
+      module: 'catering-items',
+    },
+    {
+      name: 'Menaje',
+      href: '/dashboard/catering/menaje',
+      icon: UtensilsCrossed,
+      module: 'catering-menaje',
+    },
+    {
+      name: 'Menús',
+      href: '/dashboard/catering/menus',
+      icon: BookOpen,
+      module: 'catering-menus',
+    },
+    {
+      name: 'Personal',
+      href: '/dashboard/catering/personal',
+      icon: UserCheck,
+      module: 'catering-personal',
+    },
+    {
+      name: 'Paquetes',
+      href: '/dashboard/catering/paquetes',
+      icon: Archive,
+      module: 'catering-paquetes',
+    },
+  ]
+
   const configNavigation: NavItem[] = []
 
   const agendaNavigation: NavItem[] = [
@@ -163,6 +208,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const filteredNavigation = filterByPermission(navigation)
   const filteredInventory = filterByPermission(inventoryNavigation)
   const filteredTerceros = filterByPermission(tercerosNavigation)
+  const filteredCatering = filterByPermission(cateringNavigation)
   const filteredConfig = filterByPermission(configNavigation)
   const filteredAgenda = filterByPermission(agendaNavigation)
 
@@ -292,6 +338,23 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                       filteredTerceros,
                       'bg-violet-500/10 text-violet-400',
                       'border border-violet-500/20'
+                    )}
+                  </>
+                )}
+
+                {/* Catering Section */}
+                {filteredCatering.length > 0 && (
+                  <>
+                    <div className="mt-6 mb-2 px-4">
+                      <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest flex items-center gap-2">
+                        <UtensilsCrossed className="w-3 h-3" />
+                        Catering
+                      </p>
+                    </div>
+                    {renderNavList(
+                      filteredCatering,
+                      'bg-orange-500/10 text-orange-400',
+                      'border border-orange-500/20'
                     )}
                   </>
                 )}

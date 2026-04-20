@@ -185,6 +185,8 @@ export function useQuotations() {
         template: config.template,
         logoUrl: config.logoUrl,
         logoWidth: String(config.logoWidth ?? 120),
+        logoOffsetX: String(config.logoOffsetX ?? 0),
+        logoOffsetY: String(config.logoOffsetY ?? 0),
         primaryColor: config.primaryColor,
         accentColor: config.accentColor,
         fontFamily: config.fontFamily,

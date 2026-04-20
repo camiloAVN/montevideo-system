@@ -27,6 +27,8 @@ function makeStyles(config: PDFTemplateConfig) {
       height: Math.round((config.logoWidth ?? 120) * 0.3),
       objectFit: 'contain',
       marginBottom: 6,
+      marginLeft: config.logoOffsetX ?? 0,
+      marginTop: config.logoOffsetY ?? 0,
     },
     companyName: {
       fontSize: fs + 12,

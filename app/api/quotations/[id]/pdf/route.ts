@@ -8,10 +8,14 @@ function parseConfig(sp: URLSearchParams): PDFTemplateConfig {
   const template = sp.get('template')
   const baseFontSize = Number(sp.get('baseFontSize'))
   const logoWidth = Number(sp.get('logoWidth'))
+  const logoOffsetX = Number(sp.get('logoOffsetX'))
+  const logoOffsetY = Number(sp.get('logoOffsetY'))
   return {
     template: template === 'modern' ? 'modern' : 'classic',
     logoUrl: sp.get('logoUrl') || DEFAULT_PDF_CONFIG.logoUrl,
     logoWidth: logoWidth >= 60 && logoWidth <= 220 ? logoWidth : DEFAULT_PDF_CONFIG.logoWidth,
+    logoOffsetX: logoOffsetX >= -60 && logoOffsetX <= 60 ? logoOffsetX : DEFAULT_PDF_CONFIG.logoOffsetX,
+    logoOffsetY: logoOffsetY >= -40 && logoOffsetY <= 40 ? logoOffsetY : DEFAULT_PDF_CONFIG.logoOffsetY,
     primaryColor: sp.get('primaryColor') || DEFAULT_PDF_CONFIG.primaryColor,
     accentColor: sp.get('accentColor') || DEFAULT_PDF_CONFIG.accentColor,
     fontFamily:

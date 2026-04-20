@@ -22,6 +22,12 @@ export const systemModules = [
   'historial',
   'calendario',
   'agenda',
+  'catering-proveedores',
+  'catering-items',
+  'catering-menaje',
+  'catering-menus',
+  'catering-personal',
+  'catering-paquetes',
 ] as const
 
 export type SystemModule = typeof systemModules[number]
@@ -45,6 +51,12 @@ export const moduleLabels: Record<SystemModule, string> = {
   historial: 'Historial',
   calendario: 'Calendario',
   agenda: 'Agenda',
+  'catering-proveedores': 'Catering - Proveedores',
+  'catering-items': 'Catering - Items',
+  'catering-menaje': 'Catering - Menaje',
+  'catering-menus': 'Catering - Menús',
+  'catering-personal': 'Catering - Personal',
+  'catering-paquetes': 'Catering - Paquetes',
 }
 
 // Agrupacion de modulos para la UI
@@ -54,6 +66,7 @@ export const moduleGroups = {
   terceros: ['contratistas', 'conceptos'],
   configuracion: ['categorias', 'historial'],
   agenda: ['calendario', 'agenda'],
+  catering: ['catering-proveedores', 'catering-items', 'catering-menaje', 'catering-menus', 'catering-personal', 'catering-paquetes'],
 } as const
 
 export const moduleGroupLabels: Record<keyof typeof moduleGroups, string> = {
@@ -62,6 +75,7 @@ export const moduleGroupLabels: Record<keyof typeof moduleGroups, string> = {
   terceros: 'Terceros',
   configuracion: 'Configuracion',
   agenda: 'Agenda',
+  catering: 'Catering',
 }
 
 // Schema de permisos

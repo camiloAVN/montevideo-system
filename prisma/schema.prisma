@@ -672,6 +672,164 @@ model ItemGroupItem {
   @@map("item_group_items")
 }
 
+// =============================================
+// CATERING SYSTEM
+// =============================================
+
+// CateringSupplier - Proveedores de catering (alimentos, bebidas, servicios)
+model CateringSupplier {
+  id          String   @id @default(cuid())
+  name        String
+  nit         String?
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  city        String?
+  country     String?
+  website     String?
+  notes       String?  @db.Text
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  packages CateringPackageSupplier[]
+  items    CateringItem[]
+
+  @@map("catering_suppliers")
+}
+
+// CateringItem - Insumos, alimentos y bebidas para catering
+model CateringItem {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?  @db.Text
+  category      String?
+  supplierId    String?
+  unitCost      Decimal? @db.Decimal(10, 2)
+  markupPercent Decimal? @db.Decimal(10, 4) // % de ganancia
+  markupAmount  Decimal? @db.Decimal(10, 2) // Valor de la ganancia en dinero
+  total         Decimal? @db.Decimal(10, 2) // unitCost + markupAmount
+  notes         String?  @db.Text
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  supplier CateringSupplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([supplierId])
+  @@map("catering_items")
+}
+
+// CateringMenaje - Vajilla, cristalería, cubertería, mantelería, etc.
+model CateringMenaje {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  category    String?  // Vajilla, Cristalería, Cubertería, Mantelería, Utensilios
+  quantity    Int      @default(0)
+  condition   String?  // Excelente, Bueno, Regular, Dañado
+  location    String?
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@map("catering_menaje")
+}
+
+// CateringMenu - Menús disponibles
+model CateringMenu {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?  @db.Text
+  type           String?  // Desayuno, Almuerzo, Cena, Cóctel, Coffee Break, Buffet
+  pricePerPerson Decimal? @db.Decimal(10, 2)
+  minGuests      Int?
+  maxGuests      Int?
+  notes          String?  @db.Text
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  courses CateringMenuCourse[]
+
+  @@index([type])
+  @@map("catering_menus")
+}
+
+// CateringMenuCourse - Tiempos/platos dentro de un menú
+model CateringMenuCourse {
+  id     String @id @default(cuid())
+  menuId String
+  name   String  // Entrada, Plato principal, Postre, Bebida, etc.
+  items  String  @db.Text // Descripción de los platos de este tiempo
+  order  Int     @default(0)
+
+  // Relations
+  menu CateringMenu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@index([menuId])
+  @@map("catering_menu_courses")
+}
+
+// CateringStaff - Personal de catering
+model CateringStaff {
+  id        String   @id @default(cuid())
+  name      String
+  role      String?  // Chef, Mesero, Bartender, Coordinador, Auxiliar, etc.
+  phone     String?
+  email     String?
+  dailyRate Decimal? @db.Decimal(10, 2) // Tarifa por día
+  notes     String?  @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@map("catering_staff")
+}
+
+// CateringPackage - Paquetes de catering completos
+model CateringPackage {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?  @db.Text
+  type           String?  // Empresarial, Social, Gourmet, Económico, etc.
+  pricePerPerson Decimal? @db.Decimal(10, 2)
+  minGuests      Int?
+  maxGuests      Int?
+  includes       String?  @db.Text // Descripción de qué incluye el paquete
+  notes          String?  @db.Text
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  suppliers CateringPackageSupplier[]
+
+  @@map("catering_packages")
+}
+
+// CateringPackageSupplier - Proveedores asociados a un paquete
+model CateringPackageSupplier {
+  packageId  String
+  supplierId String
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  package  CateringPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  supplier CateringSupplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@id([packageId, supplierId])
+  @@map("catering_package_suppliers")
+}
+
 // CalendarEvent - Eventos del calendario/agenda
 model CalendarEvent {
   id          String    @id @default(cuid())
