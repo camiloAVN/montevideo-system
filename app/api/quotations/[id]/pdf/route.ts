@@ -7,9 +7,11 @@ import { PDFTemplateConfig, DEFAULT_PDF_CONFIG } from '@/lib/pdf/types'
 function parseConfig(sp: URLSearchParams): PDFTemplateConfig {
   const template = sp.get('template')
   const baseFontSize = Number(sp.get('baseFontSize'))
+  const logoWidth = Number(sp.get('logoWidth'))
   return {
     template: template === 'modern' ? 'modern' : 'classic',
     logoUrl: sp.get('logoUrl') || DEFAULT_PDF_CONFIG.logoUrl,
+    logoWidth: logoWidth >= 60 && logoWidth <= 220 ? logoWidth : DEFAULT_PDF_CONFIG.logoWidth,
     primaryColor: sp.get('primaryColor') || DEFAULT_PDF_CONFIG.primaryColor,
     accentColor: sp.get('accentColor') || DEFAULT_PDF_CONFIG.accentColor,
     fontFamily:
@@ -21,6 +23,8 @@ function parseConfig(sp: URLSearchParams): PDFTemplateConfig {
         : DEFAULT_PDF_CONFIG.baseFontSize,
     companyName: sp.get('companyName') || DEFAULT_PDF_CONFIG.companyName,
     companyTagline: sp.get('companyTagline') || DEFAULT_PDF_CONFIG.companyTagline,
+    companyNit: sp.get('companyNit') ?? '',
+    companyPhone: sp.get('companyPhone') ?? '',
     companyEmail: sp.get('companyEmail') || DEFAULT_PDF_CONFIG.companyEmail,
     companyWebsite: sp.get('companyWebsite') || DEFAULT_PDF_CONFIG.companyWebsite,
   }

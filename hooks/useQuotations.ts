@@ -184,12 +184,15 @@ export function useQuotations() {
       const params = new URLSearchParams({
         template: config.template,
         logoUrl: config.logoUrl,
+        logoWidth: String(config.logoWidth ?? 120),
         primaryColor: config.primaryColor,
         accentColor: config.accentColor,
         fontFamily: config.fontFamily,
         baseFontSize: String(config.baseFontSize),
         companyName: config.companyName,
         companyTagline: config.companyTagline,
+        companyNit: config.companyNit ?? '',
+        companyPhone: config.companyPhone ?? '',
         companyEmail: config.companyEmail,
         companyWebsite: config.companyWebsite,
       })
