@@ -26,7 +26,7 @@ export const cateringItemSchema = z.object({
   markupAmount: z.number().min(0, 'La ganancia no puede ser negativa').optional().nullable(),
   total: z.number().min(0).optional().nullable(),
   notes: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean().optional(),
 })
 
 export type CateringItemFormData = z.infer<typeof cateringItemSchema>

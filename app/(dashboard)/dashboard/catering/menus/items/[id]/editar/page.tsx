@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCateringMenuItems } from '@/hooks/useCateringMenuItems'
-import { useCateringMenaje } from '@/hooks/useCateringMenaje'
+import { useCateringItems } from '@/hooks/useCateringItems'
 import { CateringMenuFromItemsForm } from '@/components/forms/CateringMenuFromItemsForm'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -15,7 +15,7 @@ export default function EditarMenuItemsPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const { currentMenu, isLoading, fetchMenu, editMenu } = useCateringMenuItems()
-  const { items: menajeItems, fetchItems } = useCateringMenaje()
+  const { items: cateringItems, fetchItems } = useCateringItems()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function EditarMenuItemsPage() {
 
   const handleSubmit = async (
     data: CateringMenuFromItemsFormData,
-    items: { menajeId: string; quantity: number }[]
+    items: { itemId: string; quantity: number }[]
   ) => {
     if (!id) return
     setIsSubmitting(true)
@@ -80,7 +80,7 @@ export default function EditarMenuItemsPage() {
         <Card.Content className="pt-6">
           <CateringMenuFromItemsForm
             menu={currentMenu}
-            allMenajeItems={menajeItems}
+            allCateringItems={cateringItems}
             onSubmit={handleSubmit}
             onCancel={() => router.push('/dashboard/catering/menus')}
             isSubmitting={isSubmitting}

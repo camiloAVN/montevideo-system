@@ -128,15 +128,15 @@ function MenuFromItemsList({
                         className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-800/40 border border-gray-700/30 text-sm"
                       >
                         <div className="min-w-0">
-                          <span className="text-gray-200 font-medium truncate block">{rel.menaje.name}</span>
-                          {rel.menaje.category && (
-                            <span className="text-xs text-gray-500">{rel.menaje.category}</span>
+                          <span className="text-gray-200 font-medium truncate block">{rel.item.name}</span>
+                          {rel.item.category && (
+                            <span className="text-xs text-gray-500">{rel.item.category}</span>
                           )}
                         </div>
                         <div className="text-right flex-shrink-0 ml-2">
                           <span className="text-gray-400 text-xs block">×{rel.quantity}</span>
                           <span className="text-orange-400 font-mono text-xs">
-                            {formatCOP((Number(rel.menaje.total) || 0) * rel.quantity)}
+                            {formatCOP((Number(rel.item.total) || 0) * rel.quantity)}
                           </span>
                         </div>
                       </div>

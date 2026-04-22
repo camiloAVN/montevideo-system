@@ -11,7 +11,7 @@ export const cateringSupplierSchema = z.object({
   country: z.string().optional(),
   website: z.string().url('URL inválida').optional().or(z.literal('')),
   notes: z.string().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean().optional(),
 })
 
 export type CateringSupplierFormData = z.infer<typeof cateringSupplierSchema>

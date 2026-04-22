@@ -7,11 +7,11 @@ import { ZodError } from 'zod'
 const menuInclude = {
   menuItems: {
     include: {
-      menaje: {
-        select: { id: true, name: true, category: true, total: true, costMode: true, totalQuantity: true },
+      item: {
+        select: { id: true, name: true, category: true, total: true, unitCost: true },
       },
     },
-    orderBy: { menaje: { name: 'asc' } },
+    orderBy: { item: { name: 'asc' } },
   },
 } as const
 
@@ -64,9 +64,9 @@ export async function PUT(
         useCustomTotal: validatedData.useCustomTotal ?? false,
         menuItems: validatedData.items?.length
           ? {
-              create: validatedData.items.map((item) => ({
-                menajeId: item.menajeId,
-                quantity: item.quantity,
+              create: validatedData.items.map((i) => ({
+                itemId: i.itemId,
+                quantity: i.quantity,
               })),
             }
           : undefined,

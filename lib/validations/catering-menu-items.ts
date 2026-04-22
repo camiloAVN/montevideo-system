@@ -25,7 +25,7 @@ export const cateringMenuFromItemsSchema = z.object({
   items: z
     .array(
       z.object({
-        menajeId: z.string().min(1),
+        itemId: z.string().min(1),
         quantity: z.number().int().min(1),
       })
     )
@@ -37,15 +37,14 @@ export type CateringMenuFromItemsFormData = z.infer<typeof cateringMenuFromItems
 export type CateringMenuFromItemsRelation = {
   id: string
   menuId: string
-  menajeId: string
+  itemId: string
   quantity: number
-  menaje: {
+  item: {
     id: string
     name: string
     category: string | null
     total: number | null
-    costMode: string
-    totalQuantity: number
+    unitCost: number | null
   }
 }
 

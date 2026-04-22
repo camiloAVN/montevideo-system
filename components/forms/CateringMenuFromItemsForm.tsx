@@ -9,7 +9,7 @@ import {
   CateringMenuFromItems,
   CATERING_MENU_TYPES,
 } from '@/lib/validations/catering-menu-items'
-import { CateringMenaje } from '@/lib/validations/catering-menaje'
+import { CateringItem } from '@/lib/validations/catering-item'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils/cn'
 import { Search, Plus, Minus, X } from 'lucide-react'
@@ -27,7 +27,7 @@ const formatCOP = (val: number) =>
   }).format(val)
 
 interface SelectedItem {
-  menajeId: string
+  itemId: string
   quantity: number
   name: string
   category: string | null
@@ -36,15 +36,15 @@ interface SelectedItem {
 
 interface CateringMenuFromItemsFormProps {
   menu?: CateringMenuFromItems | null
-  allMenajeItems: CateringMenaje[]
-  onSubmit: (data: CateringMenuFromItemsFormData, items: { menajeId: string; quantity: number }[]) => Promise<void>
+  allCateringItems: CateringItem[]
+  onSubmit: (data: CateringMenuFromItemsFormData, items: { itemId: string; quantity: number }[]) => Promise<void>
   onCancel: () => void
   isSubmitting?: boolean
 }
 
 export function CateringMenuFromItemsForm({
   menu,
-  allMenajeItems,
+  allCateringItems,
   onSubmit,
   onCancel,
   isSubmitting = false,
@@ -74,11 +74,11 @@ export function CateringMenuFromItemsForm({
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>(() => {
     if (!menu?.menuItems?.length) return []
     return menu.menuItems.map((rel) => ({
-      menajeId: rel.menajeId,
+      itemId: rel.itemId,
       quantity: rel.quantity,
-      name: rel.menaje.name,
-      category: rel.menaje.category,
-      unitTotal: Number(rel.menaje.total) || 0,
+      name: rel.item.name,
+      category: rel.item.category,
+      unitTotal: Number(rel.item.total) || 0,
     }))
   })
 
@@ -97,21 +97,21 @@ export function CateringMenuFromItemsForm({
   }, [computedTotal, useCustomTotal, setValue])
 
   const availableItems = useMemo(() => {
-    const selectedIds = new Set(selectedItems.map((s) => s.menajeId))
-    return allMenajeItems.filter(
+    const selectedIds = new Set(selectedItems.map((s) => s.itemId))
+    return allCateringItems.filter(
       (item) =>
         !selectedIds.has(item.id) &&
         (itemSearch === '' ||
           item.name.toLowerCase().includes(itemSearch.toLowerCase()) ||
           (item.category || '').toLowerCase().includes(itemSearch.toLowerCase()))
     )
-  }, [allMenajeItems, selectedItems, itemSearch])
+  }, [allCateringItems, selectedItems, itemSearch])
 
-  const addItem = (item: CateringMenaje) => {
+  const addItem = (item: CateringItem) => {
     setSelectedItems((prev) => [
       ...prev,
       {
-        menajeId: item.id,
+        itemId: item.id,
         quantity: 1,
         name: item.name,
         category: item.category,
@@ -120,19 +120,19 @@ export function CateringMenuFromItemsForm({
     ])
   }
 
-  const removeItem = (menajeId: string) => {
-    setSelectedItems((prev) => prev.filter((i) => i.menajeId !== menajeId))
+  const removeItem = (itemId: string) => {
+    setSelectedItems((prev) => prev.filter((i) => i.itemId !== itemId))
   }
 
-  const updateQuantity = (menajeId: string, qty: number) => {
+  const updateQuantity = (itemId: string, qty: number) => {
     if (qty < 1) return
     setSelectedItems((prev) =>
-      prev.map((i) => (i.menajeId === menajeId ? { ...i, quantity: qty } : i))
+      prev.map((i) => (i.itemId === itemId ? { ...i, quantity: qty } : i))
     )
   }
 
   const handleFormSubmit = async (data: CateringMenuFromItemsFormData) => {
-    await onSubmit(data, selectedItems.map((i) => ({ menajeId: i.menajeId, quantity: i.quantity })))
+    await onSubmit(data, selectedItems.map((i) => ({ itemId: i.itemId, quantity: i.quantity })))
   }
 
   return (
@@ -227,7 +227,7 @@ export function CateringMenuFromItemsForm({
           <div className="space-y-2">
             {selectedItems.map((item) => (
               <div
-                key={item.menajeId}
+                key={item.itemId}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-800/40 border border-gray-700/30"
               >
                 <div className="flex-1 min-w-0">
@@ -242,7 +242,7 @@ export function CateringMenuFromItemsForm({
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => updateQuantity(item.menajeId, item.quantity - 1)}
+                    onClick={() => updateQuantity(item.itemId, item.quantity - 1)}
                     className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-gray-200 hover:bg-gray-700 transition-colors"
                   >
                     <Minus className="w-3 h-3" />
@@ -251,12 +251,12 @@ export function CateringMenuFromItemsForm({
                     type="number"
                     min={1}
                     value={item.quantity}
-                    onChange={(e) => updateQuantity(item.menajeId, parseInt(e.target.value) || 1)}
+                    onChange={(e) => updateQuantity(item.itemId, parseInt(e.target.value) || 1)}
                     className="w-12 text-center px-1 py-0.5 rounded bg-gray-900/50 border border-gray-700 text-gray-200 text-sm focus:outline-none focus:border-orange-500"
                   />
                   <button
                     type="button"
-                    onClick={() => updateQuantity(item.menajeId, item.quantity + 1)}
+                    onClick={() => updateQuantity(item.itemId, item.quantity + 1)}
                     className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-gray-200 hover:bg-gray-700 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
@@ -269,7 +269,7 @@ export function CateringMenuFromItemsForm({
 
                 <button
                   type="button"
-                  onClick={() => removeItem(item.menajeId)}
+                  onClick={() => removeItem(item.itemId)}
                   className="text-gray-500 hover:text-red-400 transition-colors"
                 >
                   <X className="w-4 h-4" />

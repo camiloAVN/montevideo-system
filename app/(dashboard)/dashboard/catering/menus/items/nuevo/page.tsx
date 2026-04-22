@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCateringMenuItems } from '@/hooks/useCateringMenuItems'
-import { useCateringMenaje } from '@/hooks/useCateringMenaje'
+import { useCateringItems } from '@/hooks/useCateringItems'
 import { CateringMenuFromItemsForm } from '@/components/forms/CateringMenuFromItemsForm'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -14,14 +14,14 @@ import { ArrowLeft, UtensilsCrossed } from 'lucide-react'
 export default function NuevoMenuItemsPage() {
   const router = useRouter()
   const { createMenu } = useCateringMenuItems()
-  const { items: menajeItems, fetchItems } = useCateringMenaje()
+  const { items: cateringItems, fetchItems } = useCateringItems()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => { fetchItems() }, [fetchItems])
 
   const handleSubmit = async (
     data: CateringMenuFromItemsFormData,
-    items: { menajeId: string; quantity: number }[]
+    items: { itemId: string; quantity: number }[]
   ) => {
     setIsSubmitting(true)
     try {
@@ -49,14 +49,14 @@ export default function NuevoMenuItemsPage() {
         </div>
         <div>
           <h1 className="text-3xl font-bold">Nuevo Menú por Items</h1>
-          <p className="text-gray-400 mt-1">Arma un menú combinando items del catálogo de menaje</p>
+          <p className="text-gray-400 mt-1">Arma un menú combinando items del catálogo de catering</p>
         </div>
       </div>
 
       <Card>
         <Card.Content className="pt-6">
           <CateringMenuFromItemsForm
-            allMenajeItems={menajeItems}
+            allCateringItems={cateringItems}
             onSubmit={handleSubmit}
             onCancel={() => router.push('/dashboard/catering/menus')}
             isSubmitting={isSubmitting}
