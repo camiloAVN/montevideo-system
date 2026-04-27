@@ -32,6 +32,8 @@ import {
   BookOpen,
   UserCheck,
   Archive,
+  Users2,
+  Tag,
   LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
@@ -183,6 +185,21 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     },
   ]
 
+  const personalNavigation: NavItem[] = [
+    {
+      name: 'Personal',
+      href: '/dashboard/personal',
+      icon: Users2,
+      module: 'personal',
+    },
+    {
+      name: 'Categorías',
+      href: '/dashboard/personal/categorias',
+      icon: Tag,
+      module: 'personal-categorias',
+    },
+  ]
+
   const configNavigation: NavItem[] = []
 
   const agendaNavigation: NavItem[] = [
@@ -209,6 +226,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const filteredInventory = filterByPermission(inventoryNavigation)
   const filteredTerceros = filterByPermission(tercerosNavigation)
   const filteredCatering = filterByPermission(cateringNavigation)
+  const filteredPersonal = filterByPermission(personalNavigation)
   const filteredConfig = filterByPermission(configNavigation)
   const filteredAgenda = filterByPermission(agendaNavigation)
 
@@ -355,6 +373,23 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                       filteredCatering,
                       'bg-orange-500/10 text-orange-400',
                       'border border-orange-500/20'
+                    )}
+                  </>
+                )}
+
+                {/* Personal Section */}
+                {filteredPersonal.length > 0 && (
+                  <>
+                    <div className="mt-6 mb-2 px-4">
+                      <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest flex items-center gap-2">
+                        <Users2 className="w-3 h-3" />
+                        Personal
+                      </p>
+                    </div>
+                    {renderNavList(
+                      filteredPersonal,
+                      'bg-teal-500/10 text-teal-400',
+                      'border border-teal-500/20'
                     )}
                   </>
                 )}
