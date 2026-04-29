@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const quotationCateringLineSchema = z.object({
-  type: z.enum(['catering-item', 'catering-menaje', 'catering-paquete', 'personal']),
+  type: z.enum(['catering-item', 'catering-menaje', 'catering-paquete', 'personal', 'catering-staff', 'catering-staff-freelance', 'catering-staff-company']),
   refId: z.string().optional().nullable(),
   description: z.string().min(1),
   category: z.string().optional().nullable(),
@@ -76,7 +76,7 @@ export type QuotationStatus = 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPI
 export type QuotationCateringLine = {
   id: string
   quotationId: string
-  type: 'catering-item' | 'catering-menaje' | 'catering-paquete' | 'personal'
+  type: 'catering-item' | 'catering-menaje' | 'catering-paquete' | 'personal' | 'catering-staff' | 'catering-staff-freelance' | 'catering-staff-company'
   refId: string | null
   description: string
   category: string | null

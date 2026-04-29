@@ -58,7 +58,25 @@ type PersonalStaffCatalog = {
   category?: { name: string } | null
 }
 
-type CateringTab = 'items' | 'menaje' | 'paquetes'
+type CateringStaffFreelanceCatalog = {
+  id: string
+  fullName: string
+  role: string | null
+  ratePerShift: number | string | null
+}
+
+type CateringStaffCompanyCatalog = {
+  id: string
+  name: string | null
+  role: string | null
+  staffCount: number | null
+  costPerShift: number | string | null
+  total: number | string | null
+  supplier?: { id: string; name: string } | null
+}
+
+type CateringTab = 'items' | 'menaje' | 'paquetes' | 'personal'
+type CateringPersonalSubTab = 'freelance' | 'empresa'
 
 interface QuotationFormProps {
   quotation?: Quotation | null
@@ -79,6 +97,9 @@ const typeLabel: Record<string, string> = {
   'catering-item': 'Item',
   'catering-menaje': 'Menaje',
   'catering-paquete': 'Paquete',
+  'catering-staff': 'Personal Catering',
+  'catering-staff-freelance': 'Personal Freelance',
+  'catering-staff-company': 'Personal Empresa',
   personal: 'Personal',
 }
 
@@ -86,6 +107,9 @@ const typeBadge: Record<string, string> = {
   'catering-item': 'bg-orange-500/20 text-orange-400',
   'catering-menaje': 'bg-amber-500/20 text-amber-400',
   'catering-paquete': 'bg-teal-500/20 text-teal-400',
+  'catering-staff': 'bg-cyan-500/20 text-cyan-400',
+  'catering-staff-freelance': 'bg-cyan-500/20 text-cyan-400',
+  'catering-staff-company': 'bg-indigo-500/20 text-indigo-400',
   personal: 'bg-teal-500/20 text-teal-400',
 }
 
@@ -105,6 +129,8 @@ export function QuotationForm({
   const [cateringCatalogItems, setCateringCatalogItems] = useState<CateringCatalogItem[]>([])
   const [cateringCatalogMenaje, setCateringCatalogMenaje] = useState<CateringCatalogItem[]>([])
   const [cateringCatalogPackages, setCateringCatalogPackages] = useState<CateringPackageCatalog[]>([])
+  const [cateringStaffFreelance, setCateringStaffFreelance] = useState<CateringStaffFreelanceCatalog[]>([])
+  const [cateringStaffCompany, setCateringStaffCompany] = useState<CateringStaffCompanyCatalog[]>([])
   const [personalCatalog, setPersonalCatalog] = useState<PersonalStaffCatalog[]>([])
 
   const [loadingData, setLoadingData] = useState(true)
@@ -114,6 +140,7 @@ export function QuotationForm({
   const [showCateringModal, setShowCateringModal] = useState(false)
   const [showPersonalModal, setShowPersonalModal] = useState(false)
   const [cateringTab, setCateringTab] = useState<CateringTab>('items')
+  const [cateringPersonalSubTab, setCateringPersonalSubTab] = useState<CateringPersonalSubTab>('freelance')
   const [cateringSearch, setCateringSearch] = useState('')
   const [personalSearch, setPersonalSearch] = useState('')
   const [itemSearch, setItemSearch] = useState('')
@@ -234,8 +261,11 @@ export function QuotationForm({
   const computeCateringLineTotal = (line: QuotationCateringLineFormData | null | undefined) => {
     if (!line) return 0
     const unitPrice = Number(line.unitPrice) || 0
-    if (line.type === 'personal') {
+    if (line.type === 'personal' || line.type === 'catering-staff' || line.type === 'catering-staff-freelance') {
       return unitPrice * (Number(line.people) || 1) * (Number(line.shifts) || 1)
+    }
+    if (line.type === 'catering-menaje' || line.type === 'catering-staff-company') {
+      return unitPrice
     }
     return unitPrice * (Number(line.quantity) || 1)
   }
@@ -266,7 +296,8 @@ export function QuotationForm({
     const fetchData = async () => {
       try {
         const [clientsRes, projectsRes, inventoryRes, groupsRes, conceptsRes,
-          cItemsRes, cMenajeRes, cPackagesRes, staffRes] = await Promise.all([
+          cItemsRes, cMenajeRes, cPackagesRes, staffRes,
+          cFreelanceRes, cCompanyRes] = await Promise.all([
           fetch('/api/clients'),
           fetch('/api/projects'),
           fetch('/api/inventory?status=IN'),
@@ -276,6 +307,8 @@ export function QuotationForm({
           fetch('/api/catering/menaje'),
           fetch('/api/catering/packages'),
           fetch('/api/personal/staff'),
+          fetch('/api/catering/staff/freelance'),
+          fetch('/api/catering/staff/company'),
         ])
 
         if (clientsRes.ok) setClients(await clientsRes.json())
@@ -287,6 +320,8 @@ export function QuotationForm({
         if (cMenajeRes.ok) setCateringCatalogMenaje(await cMenajeRes.json())
         if (cPackagesRes.ok) setCateringCatalogPackages(await cPackagesRes.json())
         if (staffRes.ok) setPersonalCatalog(await staffRes.json())
+        if (cFreelanceRes.ok) setCateringStaffFreelance(await cFreelanceRes.json())
+        if (cCompanyRes.ok) setCateringStaffCompany(await cCompanyRes.json())
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -304,18 +339,9 @@ const handleAddInventoryItem = (item: InventoryItem) => {
         ? Number(item.product.unitPrice)
         : 0
 
-    const description = [
-      item.product?.name,
-      item.product?.brand && item.product?.model
-        ? `(${item.product.brand} ${item.product.model})`
-        : item.product?.brand || item.product?.model,
-      item.serialNumber ? `S/N: ${item.serialNumber}` : null,
-      item.assetTag ? `Tag: ${item.assetTag}` : null,
-    ].filter(Boolean).join(' ')
-
     appendItem({
       inventoryItemId: item.id,
-      description,
+      description: item.product?.name || '',
       quantity: 1,
       unitPrice: rentalPrice,
     })
@@ -386,7 +412,7 @@ const handleAddInventoryItem = (item: InventoryItem) => {
   }
 
   const handleAddCateringMenaje = (item: CateringCatalogItem) => {
-    const unitPrice = Number(item.total) || 0
+    const dbTotal = Number(item.total) || 0
     const quantity = Number(item.totalQuantity) || 1
     appendCateringLine({
       type: 'catering-menaje',
@@ -396,8 +422,8 @@ const handleAddInventoryItem = (item: InventoryItem) => {
       people: 1,
       shifts: 1,
       quantity,
-      unitPrice,
-      total: unitPrice * quantity,
+      unitPrice: dbTotal,
+      total: dbTotal,
       order: 0,
     })
     setShowCateringModal(false)
@@ -405,9 +431,9 @@ const handleAddInventoryItem = (item: InventoryItem) => {
   }
 
   const handleAddCateringPackage = (pkg: CateringPackageCatalog) => {
-    const unitPrice = pkg.useCustomTotal
-      ? (Number(pkg.customTotal) || 0)
-      : (Number(pkg.computedTotal) || 0)
+    const custom = Number(pkg.customTotal) || 0
+    const computed = Number(pkg.computedTotal) || 0
+    const unitPrice = pkg.useCustomTotal ? (custom || computed) : (computed || custom)
     appendCateringLine({
       type: 'catering-paquete',
       refId: pkg.id,
@@ -429,7 +455,7 @@ const handleAddInventoryItem = (item: InventoryItem) => {
     appendCateringLine({
       type: 'personal',
       refId: staff.id,
-      description: staff.name,
+      description: staff.category?.name || staff.name,
       category: staff.category?.name || null,
       people: 1,
       shifts: 1,
@@ -440,6 +466,43 @@ const handleAddInventoryItem = (item: InventoryItem) => {
     })
     setShowPersonalModal(false)
     setPersonalSearch('')
+  }
+
+  const handleAddCateringStaffFreelance = (staff: CateringStaffFreelanceCatalog) => {
+    const unitPrice = Number(staff.ratePerShift) || 0
+    appendCateringLine({
+      type: 'catering-staff-freelance',
+      refId: staff.id,
+      description: staff.role || staff.fullName,
+      category: staff.role || null,
+      people: 1,
+      shifts: 1,
+      quantity: 1,
+      unitPrice,
+      total: unitPrice,
+      order: 0,
+    })
+    setShowCateringModal(false)
+    setCateringSearch('')
+  }
+
+  const handleAddCateringStaffCompany = (staff: CateringStaffCompanyCatalog) => {
+    const dbTotal = Number(staff.total) || Number(staff.costPerShift) || 0
+    const staffCount = Number(staff.staffCount) || 1
+    appendCateringLine({
+      type: 'catering-staff-company',
+      refId: staff.id,
+      description: staff.role || staff.name || 'Personal Empresa',
+      category: staff.role || null,
+      people: staffCount,
+      shifts: 1,
+      quantity: staffCount,
+      unitPrice: dbTotal,
+      total: dbTotal,
+      order: 0,
+    })
+    setShowCateringModal(false)
+    setCateringSearch('')
   }
 
   const toggleGroupExpanded = (index: number) => {
@@ -502,8 +565,26 @@ const handleAddInventoryItem = (item: InventoryItem) => {
         !s || i.name.toLowerCase().includes(s) || (i.category || '').toLowerCase().includes(s)
       )
     }
-    return cateringCatalogPackages.filter(i =>
-      !s || i.name.toLowerCase().includes(s) || (i.description || '').toLowerCase().includes(s)
+    if (cateringTab === 'paquetes') {
+      return cateringCatalogPackages.filter(i =>
+        !s || i.name.toLowerCase().includes(s) || (i.description || '').toLowerCase().includes(s)
+      )
+    }
+    return []
+  }
+
+  const getFilteredCateringStaffFreelance = () => {
+    const s = cateringSearch.toLowerCase()
+    return cateringStaffFreelance.filter(i =>
+      !s || i.fullName.toLowerCase().includes(s) || (i.role || '').toLowerCase().includes(s)
+    )
+  }
+
+  const getFilteredCateringStaffCompany = () => {
+    const s = cateringSearch.toLowerCase()
+    return cateringStaffCompany.filter(i =>
+      !s || (i.name || '').toLowerCase().includes(s) || (i.role || '').toLowerCase().includes(s) ||
+      (i.supplier?.name || '').toLowerCase().includes(s)
     )
   }
 
@@ -848,7 +929,7 @@ const handleAddInventoryItem = (item: InventoryItem) => {
                   Catering
                 </h3>
                 <p className="text-sm text-gray-400 mt-1">
-                  Items de catering, menaje y paquetes de catering
+                  Items, menaje, paquetes y personal de catering
                 </p>
               </div>
               <Button type="button" variant="outline" size="sm"
@@ -868,7 +949,7 @@ const handleAddInventoryItem = (item: InventoryItem) => {
                   <div className="text-center py-8 text-gray-400">
                     <UtensilsCrossed className="w-10 h-10 mx-auto mb-3 opacity-50" />
                     <p>No hay items de catering</p>
-                    <p className="text-sm mt-1">Haz clic en &quot;Agregar Catering&quot; para incluir items, menaje o paquetes</p>
+                    <p className="text-sm mt-1">Haz clic en &quot;Agregar Catering&quot; para incluir items, menaje, paquetes o personal</p>
                   </div>
                 )
               }
@@ -878,8 +959,13 @@ const handleAddInventoryItem = (item: InventoryItem) => {
                     const line = watchedCateringLines?.[index]
                     const lineUnitPrice = Number(line?.unitPrice) || 0
                     const lineQty = Number(line?.quantity) || 1
-                    const lineTotal = lineUnitPrice * lineQty
+                    const linePeople = Number(line?.people) || 1
+                    const lineShifts = Number(line?.shifts) || 1
                     const isMenaje = line?.type === 'catering-menaje'
+                    const isCompanyStaff = line?.type === 'catering-staff-company'
+                    const isEditableStaff = line?.type === 'catering-staff' || line?.type === 'catering-staff-freelance'
+                    const isFixed = isMenaje || isCompanyStaff
+                    const lineTotal = computeCateringLineTotal(line)
                     return (
                       <div key={field.id}
                         className="rounded-lg border bg-orange-500/5 border-orange-500/20 p-4">
@@ -887,67 +973,147 @@ const handleAddInventoryItem = (item: InventoryItem) => {
                         <input type="hidden" {...register(`cateringLines.${index}.refId`)} />
                         <input type="hidden" {...register(`cateringLines.${index}.order`)} />
                         <input type="hidden" {...register(`cateringLines.${index}.total`, { valueAsNumber: true })} />
-                        <input type="hidden" {...register(`cateringLines.${index}.people`, { valueAsNumber: true })} />
-                        <input type="hidden" {...register(`cateringLines.${index}.shifts`, { valueAsNumber: true })} />
 
-                        <div className="grid grid-cols-12 gap-3">
-                          <div className="col-span-12 md:col-span-5">
-                            <div className="flex items-center gap-2 mb-1">
-                              <label className="block text-sm font-medium text-gray-300">Descripción</label>
-                              <span className={`px-2 py-0.5 rounded text-xs ${typeBadge[line?.type || 'catering-item']}`}>
-                                {typeLabel[line?.type || 'catering-item']}
-                              </span>
-                            </div>
-                            <Input placeholder="Descripción"
-                              {...register(`cateringLines.${index}.description`)} />
-                            <input type="hidden" {...register(`cateringLines.${index}.category`)} />
-                          </div>
-                          <div className="col-span-4 md:col-span-2">
-                            {isMenaje ? (
-                              <>
-                                <label className="block text-sm font-medium text-gray-300 mb-1.5">Cantidad</label>
-                                <div className="px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-300 font-medium text-sm">
-                                  {lineQty}
+                        {isEditableStaff ? (
+                          // Freelance / legacy catering-staff: editable people × shifts × rate
+                          <>
+                            <input type="hidden" {...register(`cateringLines.${index}.quantity`, { valueAsNumber: true })} />
+                            <div className="grid grid-cols-12 gap-3">
+                              <div className="col-span-12 md:col-span-4">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <label className="block text-sm font-medium text-gray-300">Categoría</label>
+                                  <span className={`px-2 py-0.5 rounded text-xs ${typeBadge[line?.type || 'catering-staff-freelance']}`}>
+                                    {typeLabel[line?.type || 'catering-staff-freelance']}
+                                  </span>
                                 </div>
-                                <input type="hidden" {...register(`cateringLines.${index}.quantity`, { valueAsNumber: true })} />
-                              </>
-                            ) : (
-                              <Input label="Cantidad" type="number" min="1" step="1"
-                                {...register(`cateringLines.${index}.quantity`, {
-                                  valueAsNumber: true,
-                                  onChange: (e) => {
-                                    const qty = Number(e.target.value) || 1
-                                    const price = Number(watchedCateringLines?.[index]?.unitPrice) || 0
-                                    setValue(`cateringLines.${index}.total`, qty * price)
-                                  },
-                                })} />
-                            )}
-                          </div>
-                          <div className="col-span-4 md:col-span-2">
-                            <Input label="Precio unit." type="number" min="0" step="1" placeholder="0"
-                              {...register(`cateringLines.${index}.unitPrice`, {
-                                valueAsNumber: true,
-                                onChange: (e) => {
-                                  const price = Number(e.target.value) || 0
-                                  const qty = Number(watchedCateringLines?.[index]?.quantity) || 1
-                                  setValue(`cateringLines.${index}.total`, price * qty)
-                                },
-                              })} />
-                          </div>
-                          <div className="col-span-3 md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-300 mb-1.5">Total</label>
-                            <div className="px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-green-400 font-medium text-sm">
-                              {formatCurrency(lineTotal)}
+                                <Input placeholder="Categoría / Rol"
+                                  {...register(`cateringLines.${index}.description`)} />
+                                <input type="hidden" {...register(`cateringLines.${index}.category`)} />
+                              </div>
+                              <div className="col-span-4 md:col-span-2">
+                                <Input label="Personas" type="number" min="1" step="1"
+                                  {...register(`cateringLines.${index}.people`, {
+                                    valueAsNumber: true,
+                                    onChange: (e) => {
+                                      const people = Number(e.target.value) || 1
+                                      const shifts = Number(watchedCateringLines?.[index]?.shifts) || 1
+                                      const price = Number(watchedCateringLines?.[index]?.unitPrice) || 0
+                                      setValue(`cateringLines.${index}.total`, people * shifts * price)
+                                    },
+                                  })} />
+                              </div>
+                              <div className="col-span-4 md:col-span-2">
+                                <Input label="Turnos" type="number" min="1" step="1"
+                                  {...register(`cateringLines.${index}.shifts`, {
+                                    valueAsNumber: true,
+                                    onChange: (e) => {
+                                      const shifts = Number(e.target.value) || 1
+                                      const people = Number(watchedCateringLines?.[index]?.people) || 1
+                                      const price = Number(watchedCateringLines?.[index]?.unitPrice) || 0
+                                      setValue(`cateringLines.${index}.total`, people * shifts * price)
+                                    },
+                                  })} />
+                              </div>
+                              <div className="col-span-4 md:col-span-2">
+                                <Input label="Valor/turno" type="number" min="0" step="1" placeholder="0"
+                                  {...register(`cateringLines.${index}.unitPrice`, {
+                                    valueAsNumber: true,
+                                    onChange: (e) => {
+                                      const price = Number(e.target.value) || 0
+                                      const people = Number(watchedCateringLines?.[index]?.people) || 1
+                                      const shifts = Number(watchedCateringLines?.[index]?.shifts) || 1
+                                      setValue(`cateringLines.${index}.total`, people * shifts * price)
+                                    },
+                                  })} />
+                              </div>
+                              <div className="col-span-3 md:col-span-1">
+                                <label className="block text-sm font-medium text-gray-300 mb-1.5">Total</label>
+                                <div className="px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-green-400 font-medium text-sm whitespace-nowrap">
+                                  {formatCurrency(lineTotal)}
+                                </div>
+                              </div>
+                              <div className="col-span-1 flex items-end justify-center pb-1">
+                                <Button type="button" variant="ghost" size="sm"
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                  onClick={() => removeCateringLine(index)}>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                          <div className="col-span-1 flex items-end justify-center pb-1">
-                            <Button type="button" variant="ghost" size="sm"
-                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                              onClick={() => removeCateringLine(index)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
+                            <div className="mt-2 text-xs text-gray-500">
+                              {formatCurrency(lineUnitPrice)} × {linePeople} pers. × {lineShifts} turno{lineShifts !== 1 ? 's' : ''} = {formatCurrency(lineTotal)}
+                            </div>
+                          </>
+                        ) : (
+                          // Items, menaje, paquetes
+                          <>
+                            <input type="hidden" {...register(`cateringLines.${index}.people`, { valueAsNumber: true })} />
+                            <input type="hidden" {...register(`cateringLines.${index}.shifts`, { valueAsNumber: true })} />
+                            <div className="grid grid-cols-12 gap-3">
+                              <div className={`col-span-12 ${isFixed ? 'md:col-span-7' : 'md:col-span-5'}`}>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <label className="block text-sm font-medium text-gray-300">Descripción</label>
+                                  <span className={`px-2 py-0.5 rounded text-xs ${typeBadge[line?.type || 'catering-item']}`}>
+                                    {typeLabel[line?.type || 'catering-item']}
+                                  </span>
+                                </div>
+                                <Input placeholder="Descripción"
+                                  {...register(`cateringLines.${index}.description`)} />
+                                <input type="hidden" {...register(`cateringLines.${index}.category`)} />
+                              </div>
+                              <div className="col-span-4 md:col-span-2">
+                                {isFixed ? (
+                                  <>
+                                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                                      {isCompanyStaff ? 'Personas' : 'Cantidad'}
+                                    </label>
+                                    <div className="px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-300 font-medium text-sm">
+                                      {isCompanyStaff ? linePeople : lineQty}
+                                    </div>
+                                    <input type="hidden" {...register(`cateringLines.${index}.quantity`, { valueAsNumber: true })} />
+                                    <input type="hidden" {...register(`cateringLines.${index}.unitPrice`, { valueAsNumber: true })} />
+                                  </>
+                                ) : (
+                                  <Input label="Cantidad" type="number" min="1" step="1"
+                                    {...register(`cateringLines.${index}.quantity`, {
+                                      valueAsNumber: true,
+                                      onChange: (e) => {
+                                        const qty = Number(e.target.value) || 1
+                                        const price = Number(watchedCateringLines?.[index]?.unitPrice) || 0
+                                        setValue(`cateringLines.${index}.total`, qty * price)
+                                      },
+                                    })} />
+                                )}
+                              </div>
+                              {!isFixed && (
+                                <div className="col-span-4 md:col-span-2">
+                                  <Input label="Precio unit." type="number" min="0" step="1" placeholder="0"
+                                    {...register(`cateringLines.${index}.unitPrice`, {
+                                      valueAsNumber: true,
+                                      onChange: (e) => {
+                                        const price = Number(e.target.value) || 0
+                                        const qty = Number(watchedCateringLines?.[index]?.quantity) || 1
+                                        setValue(`cateringLines.${index}.total`, price * qty)
+                                      },
+                                    })} />
+                                </div>
+                              )}
+                              <div className="col-span-3 md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-300 mb-1.5">Total</label>
+                                <div className="px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-green-400 font-medium text-sm">
+                                  {formatCurrency(lineTotal)}
+                                </div>
+                              </div>
+                              <div className="col-span-1 flex items-end justify-center pb-1">
+                                <Button type="button" variant="ghost" size="sm"
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                  onClick={() => removeCateringLine(index)}>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )
                   })}
@@ -1083,91 +1249,166 @@ const handleAddInventoryItem = (item: InventoryItem) => {
           </Card.Content>
         </Card>
 
-        {/* Items */}
+        {/* Items del Inventario */}
         <Card>
           <Card.Header>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Package className="w-5 h-5 text-pink-400" />
-                  Items Individuales
+                  Items del Inventario
                 </h3>
                 <p className="text-sm text-gray-400 mt-1">
-                  Agrega equipos individuales o conceptos manuales
+                  Equipos registrados en el inventario
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowItemSearch(true)}>
-                  <Package className="w-4 h-4 mr-2" />
-                  Del Inventario
-                </Button>
-                <Button type="button" variant="outline" size="sm"
-                  onClick={() => appendItem({ inventoryItemId: null, description: '', quantity: 1, unitPrice: 0 })}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Manual
-                </Button>
-              </div>
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowItemSearch(true)}>
+                <Package className="w-4 h-4 mr-2" />
+                Del Inventario
+              </Button>
             </div>
           </Card.Header>
           <Card.Content>
-            {itemFields.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                <Package className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                <p>No hay items individuales agregados</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {itemFields.map((field, index) => {
-                  const itemQty = Number(watchedItems?.[index]?.quantity) || 0
-                  const itemPrice = Number(watchedItems?.[index]?.unitPrice) || 0
-                  const itemTotal = itemQty * itemPrice
-                  const isInventoryItem = !!watchedItems?.[index]?.inventoryItemId
+            {(() => {
+              const inventoryItems = itemFields
+                .map((f, i) => ({ field: f, index: i }))
+                .filter(({ index: i }) => !!watchedItems?.[i]?.inventoryItemId)
+              if (inventoryItems.length === 0) {
+                return (
+                  <div className="text-center py-8 text-gray-400">
+                    <Package className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                    <p>No hay items del inventario agregados</p>
+                    <p className="text-sm mt-1">Haz clic en &quot;Del Inventario&quot; para agregar equipos</p>
+                  </div>
+                )
+              }
+              return (
+                <div className="space-y-4">
+                  {inventoryItems.map(({ field, index }) => {
+                    const itemQty = Number(watchedItems?.[index]?.quantity) || 0
+                    const itemPrice = Number(watchedItems?.[index]?.unitPrice) || 0
+                    const itemTotal = itemQty * itemPrice
+                    return (
+                      <div key={field.id}
+                        className="grid grid-cols-12 gap-4 p-4 rounded-lg border bg-pink-600/5 border-pink-600/20">
+                        <div className="col-span-12 md:col-span-6">
+                          <label className="block text-sm font-medium text-gray-300 mb-1.5">Nombre del Item</label>
+                          <Input placeholder="Nombre del item"
+                            error={errors.items?.[index]?.description?.message}
+                            {...register(`items.${index}.description`)} />
+                          <input type="hidden" {...register(`items.${index}.inventoryItemId`)} />
+                        </div>
+                        <div className="col-span-4 md:col-span-2">
+                          <Input label="Cantidad *" type="number" min="1" step="1"
+                            error={errors.items?.[index]?.quantity?.message}
+                            {...register(`items.${index}.quantity`, { valueAsNumber: true })} />
+                        </div>
+                        <div className="col-span-4 md:col-span-2">
+                          <Input label="Precio Unit. *" type="number" min="0" step="1" placeholder="0"
+                            error={errors.items?.[index]?.unitPrice?.message}
+                            {...register(`items.${index}.unitPrice`, { valueAsNumber: true })} />
+                        </div>
+                        <div className="col-span-3 md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-300 mb-1.5">Total</label>
+                          <div className="px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-green-400 font-medium text-sm">
+                            {formatCurrency(itemTotal)}
+                          </div>
+                        </div>
+                        <div className="col-span-1 flex items-end justify-center pb-1">
+                          <Button type="button" variant="ghost" size="sm"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            onClick={() => removeItem(index)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
+          </Card.Content>
+        </Card>
 
-                  return (
-                    <div key={field.id}
-                      className={`grid grid-cols-12 gap-4 p-4 rounded-lg border ${
-                        isInventoryItem ? 'bg-pink-600/5 border-pink-600/20' : 'bg-gray-900/30 border-gray-800'
-                      }`}>
-                      <div className="col-span-12 md:col-span-5">
-                        <div className="flex items-center gap-2 mb-1">
-                          <label className="block text-sm font-medium text-gray-300">Descripcion *</label>
-                          {isInventoryItem && (
-                            <span className="px-2 py-0.5 rounded text-xs bg-pink-600/20 text-pink-400">Inventario</span>
-                          )}
-                        </div>
-                        <Input placeholder="Descripcion del item"
-                          error={errors.items?.[index]?.description?.message}
-                          {...register(`items.${index}.description`)} />
-                        <input type="hidden" {...register(`items.${index}.inventoryItemId`)} />
-                      </div>
-                      <div className="col-span-4 md:col-span-2">
-                        <Input label="Cantidad *" type="number" min="1" step="1"
-                          error={errors.items?.[index]?.quantity?.message}
-                          {...register(`items.${index}.quantity`, { valueAsNumber: true })} />
-                      </div>
-                      <div className="col-span-4 md:col-span-2">
-                        <Input label="Precio Unit. *" type="number" min="0" step="1" placeholder="0"
-                          error={errors.items?.[index]?.unitPrice?.message}
-                          {...register(`items.${index}.unitPrice`, { valueAsNumber: true })} />
-                      </div>
-                      <div className="col-span-3 md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-300 mb-1.5">Total</label>
-                        <div className="px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-green-400 font-medium">
-                          {formatCurrency(itemTotal)}
-                        </div>
-                      </div>
-                      <div className="col-span-1 flex items-end justify-center pb-1">
-                        <Button type="button" variant="ghost" size="sm"
-                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                          onClick={() => removeItem(index)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                })}
+        {/* Items Personalizados */}
+        <Card>
+          <Card.Header>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-gray-400" />
+                  Items Personalizados
+                </h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  Conceptos manuales no vinculados al inventario
+                </p>
               </div>
-            )}
+              <Button type="button" variant="outline" size="sm"
+                onClick={() => appendItem({ inventoryItemId: null, description: '', quantity: 1, unitPrice: 0 })}>
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Item
+              </Button>
+            </div>
+          </Card.Header>
+          <Card.Content>
+            {(() => {
+              const customItems = itemFields
+                .map((f, i) => ({ field: f, index: i }))
+                .filter(({ index: i }) => !watchedItems?.[i]?.inventoryItemId)
+              if (customItems.length === 0) {
+                return (
+                  <div className="text-center py-8 text-gray-400">
+                    <Plus className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                    <p>No hay items personalizados</p>
+                    <p className="text-sm mt-1">Haz clic en &quot;Agregar Item&quot; para crear un concepto manual</p>
+                  </div>
+                )
+              }
+              return (
+                <div className="space-y-4">
+                  {customItems.map(({ field, index }) => {
+                    const itemQty = Number(watchedItems?.[index]?.quantity) || 0
+                    const itemPrice = Number(watchedItems?.[index]?.unitPrice) || 0
+                    const itemTotal = itemQty * itemPrice
+                    return (
+                      <div key={field.id}
+                        className="grid grid-cols-12 gap-4 p-4 rounded-lg border bg-gray-900/30 border-gray-800">
+                        <div className="col-span-12 md:col-span-6">
+                          <label className="block text-sm font-medium text-gray-300 mb-1.5">Descripción *</label>
+                          <Input placeholder="Descripción del item"
+                            error={errors.items?.[index]?.description?.message}
+                            {...register(`items.${index}.description`)} />
+                          <input type="hidden" {...register(`items.${index}.inventoryItemId`)} />
+                        </div>
+                        <div className="col-span-4 md:col-span-2">
+                          <Input label="Cantidad *" type="number" min="1" step="1"
+                            error={errors.items?.[index]?.quantity?.message}
+                            {...register(`items.${index}.quantity`, { valueAsNumber: true })} />
+                        </div>
+                        <div className="col-span-4 md:col-span-2">
+                          <Input label="Precio Unit. *" type="number" min="0" step="1" placeholder="0"
+                            error={errors.items?.[index]?.unitPrice?.message}
+                            {...register(`items.${index}.unitPrice`, { valueAsNumber: true })} />
+                        </div>
+                        <div className="col-span-3 md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-300 mb-1.5">Total</label>
+                          <div className="px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-green-400 font-medium text-sm">
+                            {formatCurrency(itemTotal)}
+                          </div>
+                        </div>
+                        <div className="col-span-1 flex items-end justify-center pb-1">
+                          <Button type="button" variant="ghost" size="sm"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            onClick={() => removeItem(index)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
 
             {errors.items?.message && (
               <p className="text-sm text-red-400 mt-4">{errors.items.message}</p>
@@ -1285,18 +1526,19 @@ const handleAddInventoryItem = (item: InventoryItem) => {
               </Button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-gray-800 shrink-0">
+            {/* Tabs principales */}
+            <div className="flex border-b border-gray-800 shrink-0 overflow-x-auto">
               {([
                 { key: 'items', label: 'Items', icon: UtensilsCrossed },
                 { key: 'menaje', label: 'Menaje', icon: Package },
                 { key: 'paquetes', label: 'Paquetes', icon: Package2 },
+                { key: 'personal', label: 'Personal', icon: Users2 },
               ] as const).map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => { setCateringTab(key); setCateringSearch('') }}
-                  className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     cateringTab === key
                       ? 'border-orange-500 text-orange-400'
                       : 'border-transparent text-gray-400 hover:text-gray-200'
@@ -1307,6 +1549,29 @@ const handleAddInventoryItem = (item: InventoryItem) => {
                 </button>
               ))}
             </div>
+
+            {/* Sub-tabs solo para personal */}
+            {cateringTab === 'personal' && (
+              <div className="flex border-b border-gray-800 shrink-0 px-4">
+                {([
+                  { key: 'freelance', label: 'Freelance' },
+                  { key: 'empresa', label: 'Por Empresa' },
+                ] as const).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => { setCateringPersonalSubTab(key); setCateringSearch('') }}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                      cateringPersonalSubTab === key
+                        ? 'border-cyan-500 text-cyan-400'
+                        : 'border-transparent text-gray-400 hover:text-gray-200'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="p-4 border-b border-gray-800 shrink-0">
               <Input
@@ -1319,58 +1584,110 @@ const handleAddInventoryItem = (item: InventoryItem) => {
             </div>
 
             <div className="p-4 overflow-y-auto flex-1">
-              {(() => {
-                const catalog = getFilteredCatalog() as any[]
-                if (catalog.length === 0) {
+              {cateringTab === 'personal' ? (
+                // Personal de catering
+                (() => {
+                  const staffList = cateringPersonalSubTab === 'freelance'
+                    ? getFilteredCateringStaffFreelance()
+                    : getFilteredCateringStaffCompany()
+                  if (staffList.length === 0) {
+                    return (
+                      <div className="text-center py-12 text-gray-400">
+                        <Users2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No hay personal disponible</p>
+                      </div>
+                    )
+                  }
                   return (
-                    <div className="text-center py-12 text-gray-400">
-                      <UtensilsCrossed className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No hay elementos disponibles</p>
-                    </div>
-                  )
-                }
-
-                return (
-                  <div className="space-y-2">
-                    {catalog.map((item: any) => {
-                      const price = cateringTab === 'paquetes'
-                        ? (item.useCustomTotal ? Number(item.customTotal) : Number(item.computedTotal)) || 0
-                        : Number(item.total) || 0
-                      const categoryName = item.category?.name ?? item.category ?? null
-
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between p-4 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors cursor-pointer border border-transparent hover:border-orange-500/30"
-                          onClick={() => {
-                            if (cateringTab === 'items') handleAddCateringItem(item)
-                            else if (cateringTab === 'menaje') handleAddCateringMenaje(item)
-                            else handleAddCateringPackage(item)
-                          }}
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-medium">{item.name}</p>
-                              {categoryName && (
-                                <span className="px-2 py-0.5 rounded-full text-xs bg-gray-700 text-gray-400">
-                                  {categoryName}
-                                </span>
-                              )}
-                              {item.description && (
-                                <p className="text-gray-400 text-sm w-full mt-0.5 line-clamp-1">{item.description}</p>
+                    <div className="space-y-2">
+                      {staffList.map((staff: any) => {
+                        const isFreelance = cateringPersonalSubTab === 'freelance'
+                        const name = isFreelance ? staff.fullName : (staff.name || staff.supplier?.name || 'Empresa')
+                        const role = staff.role || null
+                        const rate = isFreelance
+                          ? (Number(staff.ratePerShift) || 0)
+                          : (Number(staff.costPerShift) || Number(staff.total) || 0)
+                        return (
+                          <div
+                            key={staff.id}
+                            className="flex items-center justify-between p-4 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors cursor-pointer border border-transparent hover:border-cyan-500/30"
+                            onClick={() => isFreelance
+                              ? handleAddCateringStaffFreelance(staff)
+                              : handleAddCateringStaffCompany(staff)
+                            }
+                          >
+                            <div className="flex-1">
+                              <p className="font-medium">{name}</p>
+                              {role && <p className="text-sm text-gray-400 mt-0.5">{role}</p>}
+                              {!isFreelance && staff.supplier && (
+                                <p className="text-xs text-gray-500 mt-0.5">{staff.supplier.name}</p>
                               )}
                             </div>
+                            <div className="text-right ml-4 shrink-0">
+                              <p className="font-semibold text-green-400">{formatCurrency(rate)}</p>
+                              <p className="text-xs text-gray-500">{isFreelance ? 'valor/turno' : 'costo/turno'}</p>
+                            </div>
                           </div>
-                          <div className="text-right ml-4 shrink-0">
-                            <p className="font-semibold text-green-400">{formatCurrency(price)}</p>
-                            <p className="text-xs text-gray-500">precio base</p>
+                        )
+                      })}
+                    </div>
+                  )
+                })()
+              ) : (
+                // Items, menaje, paquetes
+                (() => {
+                  const catalog = getFilteredCatalog() as any[]
+                  if (catalog.length === 0) {
+                    return (
+                      <div className="text-center py-12 text-gray-400">
+                        <UtensilsCrossed className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No hay elementos disponibles</p>
+                      </div>
+                    )
+                  }
+                  return (
+                    <div className="space-y-2">
+                      {catalog.map((item: any) => {
+                        const price = cateringTab === 'paquetes'
+                          ? (item.useCustomTotal ? Number(item.customTotal) : Number(item.computedTotal)) || 0
+                          : Number(item.total) || 0
+                        const categoryName = item.category?.name ?? item.category ?? null
+                        return (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between p-4 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors cursor-pointer border border-transparent hover:border-orange-500/30"
+                            onClick={() => {
+                              if (cateringTab === 'items') handleAddCateringItem(item)
+                              else if (cateringTab === 'menaje') handleAddCateringMenaje(item)
+                              else handleAddCateringPackage(item)
+                            }}
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-medium">{item.name}</p>
+                                {categoryName && (
+                                  <span className="px-2 py-0.5 rounded-full text-xs bg-gray-700 text-gray-400">
+                                    {categoryName}
+                                  </span>
+                                )}
+                                {item.description && (
+                                  <p className="text-gray-400 text-sm w-full mt-0.5 line-clamp-1">{item.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right ml-4 shrink-0">
+                              <p className="font-semibold text-green-400">{formatCurrency(price)}</p>
+                              <p className="text-xs text-gray-500">
+                                {cateringTab === 'menaje' ? 'total' : 'precio base'}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
-              })()}
+                        )
+                      })}
+                    </div>
+                  )
+                })()
+              )}
             </div>
 
             <div className="p-4 border-t border-gray-800 flex justify-end shrink-0">

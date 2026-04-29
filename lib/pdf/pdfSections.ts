@@ -43,17 +43,9 @@ export function buildPdfSections(quotation: any): PdfSection[] {
         item.inventoryItem?.product?.category?.name || 'Equipos Varios'
       if (!itemsByCategory.has(catName)) itemsByCategory.set(catName, [])
 
-      const inv = item.inventoryItem
-      const parts: string[] = []
-      if (inv?.product?.sku) parts.push(`SKU: ${inv.product.sku}`)
-      if (inv?.serialNumber) parts.push(`S/N: ${inv.serialNumber}`)
-      if (inv?.assetTag) parts.push(`Activo: ${inv.assetTag}`)
-
       itemsByCategory.get(catName)!.push({
         key: `item-${item.id}`,
         description: item.description,
-        badge: inv ? 'INVENTARIO' : undefined,
-        details: parts.length > 0 ? parts.join(' | ') : undefined,
         qtyDisplay: String(item.quantity),
         unitPrice: Number(item.unitPrice),
         total: Number(item.total),
@@ -114,20 +106,33 @@ export function buildPdfSections(quotation: any): PdfSection[] {
     (l: any) => l.type !== 'personal'
   )
   if (cateringLines.length > 0) {
-    const rows: PdfRow[] = cateringLines.map((line: any) => ({
-      key: `catering-${line.id}`,
-      description: line.description,
-      badge:
-        line.type === 'catering-item'
-          ? 'ITEM'
-          : line.type === 'catering-menaje'
-          ? 'MENAJE'
-          : 'PAQUETE',
-      details: line.category || undefined,
-      qtyDisplay: String(line.quantity),
-      unitPrice: Number(line.unitPrice),
-      total: Number(line.total),
-    }))
+    const rows: PdfRow[] = cateringLines.map((line: any) => {
+      const isEditableStaff = line.type === 'catering-staff' || line.type === 'catering-staff-freelance'
+      const isCompanyStaff = line.type === 'catering-staff-company'
+      const isMenaje = line.type === 'catering-menaje'
+      const isFixed = isMenaje || isCompanyStaff
+      const lineTotal = isEditableStaff
+        ? Number(line.unitPrice) * (Number(line.people) || 1) * (Number(line.shifts) || 1)
+        : isFixed
+        ? Number(line.unitPrice)
+        : Number(line.unitPrice) * (Number(line.quantity) || 1)
+      const packageDetails: string | undefined =
+        line.type === 'catering-paquete' && Array.isArray(line.packageItems) && line.packageItems.length > 0
+          ? line.packageItems.join(', ')
+          : undefined
+      return {
+        key: `catering-${line.id}`,
+        description: line.description,
+        details: packageDetails,
+        qtyDisplay: isEditableStaff
+          ? `${line.people ?? 1} pers. × ${line.shifts ?? 1} turno${(line.shifts ?? 1) !== 1 ? 's' : ''}`
+          : isCompanyStaff
+          ? `${line.people ?? 1} pers.`
+          : String(line.quantity),
+        unitPrice: isFixed ? 0 : Number(line.unitPrice),
+        total: lineTotal,
+      }
+    })
 
     sections.push({
       id: 'catering',

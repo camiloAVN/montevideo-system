@@ -145,7 +145,42 @@ export async function GET(
       )
     }
 
-    const pdfBuffer = await generateQuotationPDF(quotation, config)
+    // Fetch package details for catering-paquete lines so the PDF can show item names
+    const packageLineIds = quotation.cateringLines
+      .filter((l) => l.type === 'catering-paquete' && l.refId)
+      .map((l) => l.refId as string)
+
+    const packageDetailsMap = new Map<string, string[]>()
+    if (packageLineIds.length > 0) {
+      const packages = await prisma.cateringPackage.findMany({
+        where: { id: { in: packageLineIds } },
+        include: {
+          items: { include: { item: { select: { name: true } } } },
+          menaje: { include: { menaje: { select: { name: true } } } },
+          menus: { select: { menuName: true } },
+          staff: { select: { staffName: true } },
+        },
+      })
+      for (const pkg of packages) {
+        const names: string[] = [
+          ...pkg.items.map((pi) => pi.item.name),
+          ...pkg.menaje.map((pm) => pm.menaje.name),
+          ...pkg.menus.map((pm) => pm.menuName),
+          ...pkg.staff.map((ps) => ps.staffName),
+        ]
+        packageDetailsMap.set(pkg.id, names)
+      }
+    }
+
+    const enrichedLines = quotation.cateringLines.map((l) => ({
+      ...l,
+      packageItems: l.type === 'catering-paquete' && l.refId
+        ? (packageDetailsMap.get(l.refId) ?? [])
+        : undefined,
+    }))
+
+    const quotationForPdf = { ...quotation, cateringLines: enrichedLines }
+    const pdfBuffer = await generateQuotationPDF(quotationForPdf, config)
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
