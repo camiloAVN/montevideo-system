@@ -227,6 +227,7 @@ model Quotation {
   items         QuotationItem[]
   groups        QuotationGroup[]
   conceptItems  QuotationConcept[]
+  cateringLines QuotationCateringLine[]
 
   @@index([clientId])
   @@index([projectId])
@@ -1054,4 +1055,29 @@ model Personal {
   category   PersonalCategory? @relation(fields: [categoryId], references: [id])
 
   @@map("personal_staff")
+}
+
+// Quotation catering lines — items, menaje, paquetes, personal from catering/personal modules
+model QuotationCateringLine {
+  id          String   @id @default(cuid())
+  quotationId String
+  // type: 'catering-item' | 'catering-menaje' | 'catering-paquete' | 'personal'
+  type        String
+  refId       String?  // ID in the source catalog (optional snapshot)
+  description String
+  category    String?
+  // Personal-specific: total = unitPrice × people × shifts
+  people      Int      @default(1)
+  shifts      Int      @default(1)
+  // Regular items: total = unitPrice × quantity
+  quantity    Int      @default(1)
+  unitPrice   Decimal  @db.Decimal(12, 2)
+  total       Decimal  @db.Decimal(12, 2)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+  @@map("quotation_catering_lines")
 }

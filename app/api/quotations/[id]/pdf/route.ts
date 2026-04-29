@@ -80,6 +80,7 @@ export async function GET(
                     name: true,
                     brand: true,
                     model: true,
+                    category: { select: { id: true, name: true, color: true } },
                   },
                 },
               },
@@ -119,6 +120,19 @@ export async function GET(
           },
         },
         conceptItems: {
+          orderBy: { order: 'asc' },
+          include: {
+            concept: {
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                supplier: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+        cateringLines: {
           orderBy: { order: 'asc' },
         },
       },

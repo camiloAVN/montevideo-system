@@ -1,5 +1,18 @@
 import { z } from 'zod'
 
+export const quotationCateringLineSchema = z.object({
+  type: z.enum(['catering-item', 'catering-menaje', 'catering-paquete', 'personal']),
+  refId: z.string().optional().nullable(),
+  description: z.string().min(1),
+  category: z.string().optional().nullable(),
+  people: z.number().int().min(1),
+  shifts: z.number().int().min(1),
+  quantity: z.number().int().min(1),
+  unitPrice: z.number().min(0),
+  total: z.number().min(0),
+  order: z.number().int(),
+})
+
 export const quotationItemSchema = z.object({
   inventoryItemId: z.string().optional().nullable(),
   description: z.string().min(3, 'La descripción debe tener al menos 3 caracteres'),
@@ -40,19 +53,41 @@ export const quotationSchemaBase = z.object({
   items: z.array(quotationItemSchema),
   groups: z.array(quotationGroupSchema),
   conceptItems: z.array(quotationConceptSchema),
+  cateringLines: z.array(quotationCateringLineSchema).optional(),
 })
 
 export const quotationSchema = quotationSchemaBase.refine(
-  (data) => data.items.length > 0 || data.groups.length > 0 || data.conceptItems.length > 0,
-  { message: 'Debes agregar al menos un item, grupo o concepto de contratista', path: ['items'] }
+  (data) =>
+    data.items.length > 0 ||
+    data.groups.length > 0 ||
+    data.conceptItems.length > 0 ||
+    (data.cateringLines ?? []).length > 0,
+  { message: 'Debes agregar al menos un item, grupo, concepto o línea de catering', path: ['items'] }
 )
 
 export type QuotationItemFormData = z.infer<typeof quotationItemSchema>
 export type QuotationGroupFormData = z.infer<typeof quotationGroupSchema>
 export type QuotationConceptFormData = z.infer<typeof quotationConceptSchema>
+export type QuotationCateringLineFormData = z.infer<typeof quotationCateringLineSchema>
 export type QuotationFormData = z.infer<typeof quotationSchemaBase>
 
 export type QuotationStatus = 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED'
+
+export type QuotationCateringLine = {
+  id: string
+  quotationId: string
+  type: 'catering-item' | 'catering-menaje' | 'catering-paquete' | 'personal'
+  refId: string | null
+  description: string
+  category: string | null
+  people: number
+  shifts: number
+  quantity: number
+  unitPrice: number
+  total: number
+  order: number
+  createdAt: Date
+}
 
 export type QuotationConceptItem = {
   id: string
@@ -184,6 +219,7 @@ export type Quotation = {
   items: QuotationItem[]
   groups?: QuotationGroupItem[]
   conceptItems?: QuotationConceptItem[]
+  cateringLines?: QuotationCateringLine[]
 }
 
 export const statusLabels: Record<QuotationStatus, string> = {

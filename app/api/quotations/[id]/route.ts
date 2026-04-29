@@ -113,6 +113,9 @@ export async function GET(
             },
           },
         },
+        cateringLines: {
+          orderBy: { order: 'asc' },
+        },
       },
     })
 
@@ -204,6 +207,25 @@ export async function PUT(
       }
     })
 
+    // Process catering lines
+    const cateringLines = (validatedData.cateringLines || []).map((line, index) => {
+      const lineTotal = new Decimal(line.total)
+      subtotal = subtotal.plus(lineTotal)
+
+      return {
+        type: line.type,
+        refId: line.refId || null,
+        description: line.description,
+        category: line.category || null,
+        people: line.people,
+        shifts: line.shifts,
+        quantity: line.quantity,
+        unitPrice: new Decimal(line.unitPrice),
+        total: lineTotal,
+        order: items.length + groups.length + conceptItems.length + index,
+      }
+    })
+
     const discount = validatedData.discount ? new Decimal(validatedData.discount) : new Decimal(0)
     const taxRate = validatedData.tax ? new Decimal(validatedData.tax) : new Decimal(16)
 
@@ -211,7 +233,7 @@ export async function PUT(
     const tax = subtotalAfterDiscount.times(taxRate).dividedBy(100)
     const total = subtotalAfterDiscount.plus(tax)
 
-    // Delete existing items, groups and concept items
+    // Delete existing items, groups, concept items and catering lines
     await prisma.quotationItem.deleteMany({
       where: { quotationId: id },
     })
@@ -219,6 +241,9 @@ export async function PUT(
       where: { quotationId: id },
     })
     await prisma.quotationConcept.deleteMany({
+      where: { quotationId: id },
+    })
+    await prisma.quotationCateringLine.deleteMany({
       where: { quotationId: id },
     })
 
@@ -245,6 +270,9 @@ export async function PUT(
         },
         conceptItems: {
           create: conceptItems,
+        },
+        cateringLines: {
+          create: cateringLines,
         },
       },
       include: {
@@ -342,6 +370,9 @@ export async function PUT(
               },
             },
           },
+        },
+        cateringLines: {
+          orderBy: { order: 'asc' },
         },
       },
     })

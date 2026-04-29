@@ -4,18 +4,19 @@ import { personalCategorySchema } from '@/lib/validations/personal'
 import { canEditModule } from '@/lib/auth/check-permission'
 import { ZodError } from 'zod'
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const permissionCheck = await canEditModule('personal')
     if (!permissionCheck.hasPermission) {
       return NextResponse.json({ error: permissionCheck.error }, { status: permissionCheck.status })
     }
 
+    const { id } = await params
     const body = await request.json()
     const data = personalCategorySchema.parse(body)
 
     const category = await prisma.personalCategory.update({
-      where: { id: params.id },
+      where: { id },
       data: { name: data.name, isActive: data.isActive ?? true },
       include: { _count: { select: { staff: true } } },
     })
@@ -30,14 +31,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const permissionCheck = await canEditModule('personal')
     if (!permissionCheck.hasPermission) {
       return NextResponse.json({ error: permissionCheck.error }, { status: permissionCheck.status })
     }
 
-    const count = await prisma.personal.count({ where: { categoryId: params.id } })
+    const { id } = await params
+    const count = await prisma.personal.count({ where: { categoryId: id } })
     if (count > 0) {
       return NextResponse.json(
         { error: `No se puede eliminar: hay ${count} persona(s) con esta categoría` },
@@ -45,7 +47,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
       )
     }
 
-    await prisma.personalCategory.delete({ where: { id: params.id } })
+    await prisma.personalCategory.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting personal category:', error)

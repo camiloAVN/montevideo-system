@@ -3,17 +3,14 @@ import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/render
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { PDFTemplateConfig } from '../types'
+import { buildPdfSections, PdfSection, PdfSubcategory, PdfRow } from '../pdfSections'
 
 function makeStyles(config: PDFTemplateConfig) {
   const { primaryColor, accentColor, baseFontSize, fontFamily } = config
   const fs = baseFontSize
   return StyleSheet.create({
-    page: {
-      fontSize: fs,
-      fontFamily,
-      backgroundColor: '#ffffff',
-    },
-    // ── Header band ───────────────────────────────────────────────────────────
+    page: { fontSize: fs, fontFamily, backgroundColor: '#ffffff' },
+    // Header band
     headerBand: {
       backgroundColor: primaryColor,
       padding: '20 40 16 40',
@@ -30,16 +27,8 @@ function makeStyles(config: PDFTemplateConfig) {
       marginLeft: config.logoOffsetX ?? 0,
       marginTop: config.logoOffsetY ?? 0,
     },
-    companyName: {
-      fontSize: fs + 12,
-      fontWeight: 'bold',
-      color: '#ffffff',
-      marginBottom: 2,
-    },
-    companyTagline: {
-      fontSize: fs - 1,
-      color: 'rgba(255,255,255,0.75)',
-    },
+    companyName: { fontSize: fs + 12, fontWeight: 'bold', color: '#ffffff', marginBottom: 2 },
+    companyTagline: { fontSize: fs - 1, color: 'rgba(255,255,255,0.75)' },
     headerRight: { alignItems: 'flex-end' },
     quotationLabel: {
       fontSize: fs - 2,
@@ -47,12 +36,7 @@ function makeStyles(config: PDFTemplateConfig) {
       letterSpacing: 1,
       marginBottom: 4,
     },
-    quotationNumber: {
-      fontSize: fs + 10,
-      fontWeight: 'bold',
-      color: '#ffffff',
-      marginBottom: 6,
-    },
+    quotationNumber: { fontSize: fs + 10, fontWeight: 'bold', color: '#ffffff', marginBottom: 6 },
     quotationBadge: {
       fontSize: fs - 2,
       color: primaryColor,
@@ -64,26 +48,21 @@ function makeStyles(config: PDFTemplateConfig) {
       borderRadius: 10,
       fontWeight: 'bold',
     },
-    // ── Body ─────────────────────────────────────────────────────────────────
-    body: { padding: '20 40 60 40' },
-    // ── Meta strip ───────────────────────────────────────────────────────────
+    // Body
+    body: { padding: '20 40 70 40' },
+    // Meta strip
     metaStrip: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       marginBottom: 20,
       paddingBottom: 16,
-      borderBottom: `1 solid #e5e7eb`,
+      borderBottom: '1 solid #e5e7eb',
     },
     metaBlock: { flexDirection: 'column' },
-    metaLabel: {
-      fontSize: fs - 2,
-      color: '#9ca3af',
-      letterSpacing: 0.5,
-      marginBottom: 3,
-    },
+    metaLabel: { fontSize: fs - 2, color: '#9ca3af', letterSpacing: 0.5, marginBottom: 3 },
     metaValue: { fontSize: fs - 1, color: '#1f2937', fontWeight: 'bold' },
     metaValueSub: { fontSize: fs - 2, color: '#6b7280', marginTop: 1 },
-    // ── Client card ──────────────────────────────────────────────────────────
+    // Client card
     clientCard: {
       backgroundColor: '#f9fafb',
       borderRadius: 6,
@@ -99,20 +78,32 @@ function makeStyles(config: PDFTemplateConfig) {
       letterSpacing: 0.5,
     },
     clientInfo: { fontSize: fs - 1, color: '#4b5563', lineHeight: 1.6 },
-    // ── Section ──────────────────────────────────────────────────────────────
-    sectionTitle: {
-      fontSize: fs,
-      fontWeight: 'bold',
-      color: primaryColor,
-      marginBottom: 4,
-    },
+    // Section title
+    sectionTitle: { fontSize: fs, fontWeight: 'bold', color: primaryColor, marginBottom: 4 },
     sectionDesc: { fontSize: fs - 1, color: '#6b7280', marginBottom: 14 },
-    // ── Table ────────────────────────────────────────────────────────────────
-    table: { marginBottom: 20 },
+    // Category sections
+    categoryBlock: { marginBottom: 20 },
+    categoryHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: '10 12',
+    },
+    categoryTitle: { fontSize: fs + 5, fontWeight: 'bold', color: '#ffffff', flexGrow: 1 },
+    categoryTotalLabel: { fontSize: fs + 1, color: 'rgba(255,255,255,0.9)', fontWeight: 'bold' },
+    // Subcategory
+    subcategoryHeader: {
+      flexDirection: 'row',
+      padding: '5 10',
+      backgroundColor: '#f0f4f8',
+      borderBottom: '1 solid #e2e8f0',
+    },
+    subcategoryTitle: { fontSize: fs, fontWeight: 'bold', color: '#334155' },
+    subcategoryTotal: { fontSize: fs - 1, color: '#64748b', marginLeft: 'auto' },
+    // Table
     tableHeader: {
       flexDirection: 'row',
       backgroundColor: '#1f2937',
-      padding: '7 8',
+      padding: '6 8',
       fontSize: fs - 1,
       color: '#ffffff',
       fontWeight: 'bold',
@@ -120,58 +111,44 @@ function makeStyles(config: PDFTemplateConfig) {
     tableRow: {
       flexDirection: 'row',
       padding: '7 8',
-      borderBottom: '1 solid #f3f4f6',
+      borderBottom: '1 solid #f1f5f9',
       fontSize: fs - 1,
+      backgroundColor: '#ffffff',
     },
     tableRowAlt: {
       flexDirection: 'row',
       padding: '7 8',
-      borderBottom: '1 solid #f3f4f6',
+      borderBottom: '1 solid #f1f5f9',
       fontSize: fs - 1,
-      backgroundColor: '#fafafa',
+      backgroundColor: '#f8fafc',
     },
-    tableCol1: { width: '8%' },
-    tableCol2: { width: '42%' },
-    tableCol3: { width: '15%', textAlign: 'right' },
-    tableCol4: { width: '15%', textAlign: 'right' },
-    tableCol5: { width: '20%', textAlign: 'right' },
-    itemDescription: { fontSize: fs - 1, color: '#1f2937' },
-    itemDetails: { fontSize: fs - 3, color: '#9ca3af', marginTop: 2 },
-    inventoryBadge: {
+    col1: { width: '7%' },
+    col2: { width: '43%' },
+    col3: { width: '16%', textAlign: 'right' },
+    col4: { width: '16%', textAlign: 'right' },
+    col5: { width: '18%', textAlign: 'right' },
+    itemDescription: { fontSize: fs - 1, color: '#1e293b' },
+    itemDetails: { fontSize: fs - 3, color: '#94a3b8', marginTop: 2 },
+    badge: {
       fontSize: fs - 4,
-      color: primaryColor,
-      backgroundColor: '#fce7f3',
-      padding: '2 4',
+      color: '#ffffff',
+      backgroundColor: '#64748b',
+      padding: '1 4',
       borderRadius: 2,
       marginTop: 2,
     },
-    groupBadge: {
-      fontSize: fs - 4,
-      color: '#059669',
-      backgroundColor: '#d1fae5',
-      padding: '2 4',
-      borderRadius: 2,
-      marginTop: 2,
+    // Section subtotal
+    sectionSubtotal: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      padding: '5 10',
+      borderTop: '1.5 solid #e2e8f0',
     },
-    groupItemsList: {
-      fontSize: fs - 3,
-      color: '#9ca3af',
-      marginTop: 4,
-      paddingLeft: 8,
-      lineHeight: 1.4,
-    },
-    conceptBadge: {
-      fontSize: fs - 4,
-      color: '#7c3aed',
-      backgroundColor: '#ede9fe',
-      padding: '2 4',
-      borderRadius: 2,
-      marginTop: 2,
-    },
-    // ── Totals ───────────────────────────────────────────────────────────────
+    sectionSubtotalText: { fontSize: fs, fontWeight: 'bold', color: '#1e293b' },
+    // Totals
     totalsWrapper: { alignItems: 'flex-end', marginTop: 8 },
     totalsBox: {
-      width: '42%',
+      width: '45%',
       borderRadius: 6,
       overflow: 'hidden',
       border: '1 solid #e5e7eb',
@@ -184,31 +161,26 @@ function makeStyles(config: PDFTemplateConfig) {
       color: '#374151',
       borderBottom: '1 solid #f3f4f6',
     },
-    totalRow: {
+    grandTotalRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       padding: '10 12',
       backgroundColor: primaryColor,
       color: '#ffffff',
       fontWeight: 'bold',
-      fontSize: fs + 2,
+      fontSize: fs + 3,
     },
-    // ── Notes ────────────────────────────────────────────────────────────────
+    // Notes
     notes: {
-      marginTop: 24,
+      marginTop: 20,
       padding: 14,
       backgroundColor: '#f9fafb',
       borderRadius: 4,
       borderLeft: `3 solid ${accentColor}`,
     },
-    notesTitle: {
-      fontSize: fs,
-      fontWeight: 'bold',
-      color: '#374151',
-      marginBottom: 4,
-    },
+    notesTitle: { fontSize: fs, fontWeight: 'bold', color: '#374151', marginBottom: 4 },
     notesText: { fontSize: fs - 1, color: '#6b7280', lineHeight: 1.5 },
-    // ── Footer ───────────────────────────────────────────────────────────────
+    // Footer
     footer: {
       position: 'absolute',
       bottom: 24,
@@ -218,7 +190,7 @@ function makeStyles(config: PDFTemplateConfig) {
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingTop: 10,
-      borderTop: `1 solid #e5e7eb`,
+      borderTop: '1 solid #e5e7eb',
     },
     footerText: { fontSize: fs - 2, color: '#9ca3af' },
     footerAccent: { fontSize: fs - 2, color: primaryColor, fontWeight: 'bold' },
@@ -228,6 +200,76 @@ function makeStyles(config: PDFTemplateConfig) {
 interface Props {
   quotation: any
   config: PDFTemplateConfig
+}
+
+function SectionBlock({
+  section,
+  styles,
+  formatCurrency,
+  rowOffset,
+}: {
+  section: PdfSection
+  styles: any
+  formatCurrency: (v: number) => string
+  rowOffset: number
+}) {
+  let globalRowNum = rowOffset
+
+  const renderRow = (row: PdfRow, idx: number) => {
+    globalRowNum++
+    const num = globalRowNum
+    const style = idx % 2 === 0 ? styles.tableRow : styles.tableRowAlt
+    return (
+      <View key={row.key} style={style}>
+        <Text style={styles.col1}>{num}</Text>
+        <View style={styles.col2}>
+          <Text style={styles.itemDescription}>{row.description}</Text>
+          {row.details && <Text style={styles.itemDetails}>{row.details}</Text>}
+          {row.badge && <Text style={styles.badge}>{row.badge}</Text>}
+        </View>
+        <Text style={styles.col3}>{row.qtyDisplay}</Text>
+        <Text style={styles.col4}>{formatCurrency(row.unitPrice)}</Text>
+        <Text style={styles.col5}>{formatCurrency(row.total)}</Text>
+      </View>
+    )
+  }
+
+  const renderSubcategory = (sc: PdfSubcategory, scIdx: number) => (
+    <View key={`sc-${scIdx}`}>
+      {sc.name && (
+        <View style={styles.subcategoryHeader}>
+          <Text style={styles.subcategoryTitle}>{sc.name}</Text>
+          <Text style={styles.subcategoryTotal}>{formatCurrency(sc.subtotal)}</Text>
+        </View>
+      )}
+      {sc.rows.map((row, i) => renderRow(row, i))}
+    </View>
+  )
+
+  return (
+    <View style={styles.categoryBlock}>
+      <View style={[styles.categoryHeader, { backgroundColor: section.color }]}>
+        <Text style={styles.categoryTitle}>{section.title.toUpperCase()}</Text>
+        <Text style={styles.categoryTotalLabel}>{formatCurrency(section.total)}</Text>
+      </View>
+
+      <View style={styles.tableHeader}>
+        <Text style={styles.col1}>#</Text>
+        <Text style={styles.col2}>Descripción</Text>
+        <Text style={styles.col3}>Cantidad</Text>
+        <Text style={styles.col4}>P. Unit.</Text>
+        <Text style={styles.col5}>Total</Text>
+      </View>
+
+      {section.subcategories.map((sc, i) => renderSubcategory(sc, i))}
+
+      <View style={styles.sectionSubtotal}>
+        <Text style={styles.sectionSubtotalText}>
+          Total {section.title}: {formatCurrency(section.total)}
+        </Text>
+      </View>
+    </View>
+  )
 }
 
 export function QuotationModernDocument({ quotation, config }: Props) {
@@ -241,45 +283,13 @@ export function QuotationModernDocument({ quotation, config }: Props) {
       maximumFractionDigits: 0,
     }).format(value)
 
-  const getItemInventoryDetails = (item: any) => {
-    if (!item.inventoryItem) return null
-    const inv = item.inventoryItem
-    const parts = []
-    if (inv.product?.sku) parts.push(`SKU: ${inv.product.sku}`)
-    if (inv.serialNumber) parts.push(`S/N: ${inv.serialNumber}`)
-    if (inv.assetTag) parts.push(`Activo: ${inv.assetTag}`)
-    return parts.length > 0 ? parts.join(' | ') : null
-  }
-
-  const getGroupItemsList = (group: any) => {
-    if (!group.group?.items || group.group.items.length === 0) return null
-    return group.group.items
-      .map((item: any) => item.inventoryItem?.product?.name || 'Item')
-      .join(', ')
-  }
-
-  const allLineItems: { type: 'item' | 'group' | 'concept'; data: any; order: number }[] = []
-  if (quotation.items) {
-    quotation.items.forEach((item: any) => {
-      allLineItems.push({ type: 'item', data: item, order: item.order || 0 })
-    })
-  }
-  if (quotation.groups) {
-    quotation.groups.forEach((group: any) => {
-      allLineItems.push({ type: 'group', data: group, order: group.order || 0 })
-    })
-  }
-  if (quotation.conceptItems) {
-    quotation.conceptItems.forEach((concept: any) => {
-      allLineItems.push({ type: 'concept', data: concept, order: concept.order || 0 })
-    })
-  }
-  allLineItems.sort((a, b) => a.order - b.order)
+  const sections = buildPdfSections(quotation)
+  let rowCount = 0
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* ── Header Band ── */}
+        {/* Header Band */}
         <View style={styles.headerBand}>
           <View style={styles.headerLeft}>
             {config.logoUrl ? (
@@ -296,7 +306,6 @@ export function QuotationModernDocument({ quotation, config }: Props) {
           </View>
         </View>
 
-        {/* ── Body ── */}
         <View style={styles.body}>
           {/* Meta strip */}
           <View style={styles.metaStrip}>
@@ -330,13 +339,14 @@ export function QuotationModernDocument({ quotation, config }: Props) {
             <Text style={styles.clientCardTitle}>FACTURAR A</Text>
             <Text style={styles.clientInfo}>
               {quotation.client.name}{'\n'}
-              {quotation.client.company && `${quotation.client.company}\n`}
+              {quotation.client.company ? `${quotation.client.company}\n` : ''}
               {quotation.client.email}{'\n'}
-              {quotation.client.phone && `${quotation.client.phone}\n`}
-              {quotation.client.address && `${quotation.client.address}\n`}
-              {quotation.client.city && quotation.client.country &&
-                `${quotation.client.city}, ${quotation.client.country}\n`}
-              {quotation.client.taxId && `NIT: ${quotation.client.taxId}`}
+              {quotation.client.phone ? `${quotation.client.phone}\n` : ''}
+              {quotation.client.address ? `${quotation.client.address}\n` : ''}
+              {quotation.client.city && quotation.client.country
+                ? `${quotation.client.city}, ${quotation.client.country}\n`
+                : ''}
+              {quotation.client.taxId ? `NIT: ${quotation.client.taxId}` : ''}
             </Text>
           </View>
 
@@ -346,86 +356,33 @@ export function QuotationModernDocument({ quotation, config }: Props) {
             <Text style={styles.sectionDesc}>{quotation.description}</Text>
           )}
 
-          {/* Table */}
-          <View style={styles.table}>
-            <View style={styles.tableHeader}>
-              <Text style={styles.tableCol1}>#</Text>
-              <Text style={styles.tableCol2}>Descripción</Text>
-              <Text style={styles.tableCol3}>Cant.</Text>
-              <Text style={styles.tableCol4}>P. Unit.</Text>
-              <Text style={styles.tableCol5}>Total</Text>
-            </View>
-            {allLineItems.map((lineItem, index) => {
-              const rowStyle = index % 2 === 0 ? styles.tableRow : styles.tableRowAlt
-              if (lineItem.type === 'item') {
-                const item = lineItem.data
-                const inventoryDetails = getItemInventoryDetails(item)
-                return (
-                  <View key={`item-${item.id}`} style={rowStyle}>
-                    <Text style={styles.tableCol1}>{index + 1}</Text>
-                    <View style={styles.tableCol2}>
-                      <Text style={styles.itemDescription}>{item.description}</Text>
-                      {inventoryDetails && (
-                        <Text style={styles.itemDetails}>{inventoryDetails}</Text>
-                      )}
-                      {item.inventoryItem && (
-                        <Text style={styles.inventoryBadge}>INVENTARIO</Text>
-                      )}
-                    </View>
-                    <Text style={styles.tableCol3}>{item.quantity}</Text>
-                    <Text style={styles.tableCol4}>{formatCurrency(Number(item.unitPrice))}</Text>
-                    <Text style={styles.tableCol5}>{formatCurrency(Number(item.total))}</Text>
-                  </View>
-                )
-              } else if (lineItem.type === 'group') {
-                const group = lineItem.data
-                const groupItemsList = getGroupItemsList(group)
-                return (
-                  <View key={`group-${group.id}`} style={rowStyle}>
-                    <Text style={styles.tableCol1}>{index + 1}</Text>
-                    <View style={styles.tableCol2}>
-                      <Text style={styles.itemDescription}>{group.name}</Text>
-                      {group.description && (
-                        <Text style={styles.itemDetails}>{group.description}</Text>
-                      )}
-                      <Text style={styles.groupBadge}>PAQUETE</Text>
-                      {groupItemsList && (
-                        <Text style={styles.groupItemsList}>Incluye: {groupItemsList}</Text>
-                      )}
-                    </View>
-                    <Text style={styles.tableCol3}>{group.quantity}</Text>
-                    <Text style={styles.tableCol4}>{formatCurrency(Number(group.unitPrice))}</Text>
-                    <Text style={styles.tableCol5}>{formatCurrency(Number(group.total))}</Text>
-                  </View>
-                )
-              } else {
-                const concept = lineItem.data
-                return (
-                  <View key={`concept-${concept.id}`} style={rowStyle}>
-                    <Text style={styles.tableCol1}>{index + 1}</Text>
-                    <View style={styles.tableCol2}>
-                      <Text style={styles.itemDescription}>{concept.name}</Text>
-                      {concept.description && (
-                        <Text style={styles.itemDetails}>{concept.description}</Text>
-                      )}
-                      <Text style={styles.conceptBadge}>SERVICIO</Text>
-                    </View>
-                    <Text style={styles.tableCol3}>{concept.quantity}</Text>
-                    <Text style={styles.tableCol4}>{formatCurrency(Number(concept.unitPrice))}</Text>
-                    <Text style={styles.tableCol5}>{formatCurrency(Number(concept.total))}</Text>
-                  </View>
-                )
-              }
-            })}
-          </View>
+          {/* Category sections */}
+          {sections.map((section) => {
+            const sectionRowCount = section.subcategories.reduce(
+              (s, sc) => s + sc.rows.length, 0
+            )
+            const offset = rowCount
+            rowCount += sectionRowCount
+            return (
+              <SectionBlock
+                key={section.id}
+                section={section}
+                styles={styles}
+                formatCurrency={formatCurrency}
+                rowOffset={offset}
+              />
+            )
+          })}
 
-          {/* Totals */}
+          {/* Grand totals */}
           <View style={styles.totalsWrapper}>
             <View style={styles.totalsBox}>
-              <View style={styles.totalsRow}>
-                <Text>Subtotal</Text>
-                <Text>{formatCurrency(Number(quotation.subtotal))}</Text>
-              </View>
+              {sections.map((s) => (
+                <View key={`tot-${s.id}`} style={styles.totalsRow}>
+                  <Text>{s.title}</Text>
+                  <Text>{formatCurrency(s.total)}</Text>
+                </View>
+              ))}
               {Number(quotation.discount) > 0 && (
                 <View style={styles.totalsRow}>
                   <Text>Descuento</Text>
@@ -433,11 +390,11 @@ export function QuotationModernDocument({ quotation, config }: Props) {
                 </View>
               )}
               <View style={styles.totalsRow}>
-                <Text>IVA (19%)</Text>
+                <Text>IVA</Text>
                 <Text>{formatCurrency(Number(quotation.tax))}</Text>
               </View>
-              <View style={styles.totalRow}>
-                <Text>TOTAL</Text>
+              <View style={styles.grandTotalRow}>
+                <Text>GRAN TOTAL</Text>
                 <Text>{formatCurrency(Number(quotation.total))}</Text>
               </View>
             </View>
@@ -450,7 +407,6 @@ export function QuotationModernDocument({ quotation, config }: Props) {
               <Text style={styles.notesText}>{quotation.notes}</Text>
             </View>
           )}
-
           {quotation.terms && (
             <View style={styles.notes}>
               <Text style={styles.notesTitle}>Términos y Condiciones</Text>

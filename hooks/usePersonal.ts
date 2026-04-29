@@ -4,33 +4,44 @@ import { PersonalStaffFormData, PersonalCategoryFormData } from '@/lib/validatio
 import toast from 'react-hot-toast'
 
 export function usePersonal() {
-  const store = usePersonalStore()
+  const {
+    staff,
+    categories,
+    currentStaff,
+    isLoading,
+    error,
+    setStaff,
+    setCategories,
+    setCurrentStaff,
+    setIsLoading,
+    setError,
+  } = usePersonalStore()
 
   const fetchStaff = useCallback(async () => {
-    store.setIsLoading(true)
+    setIsLoading(true)
     try {
       const res = await fetch('/api/personal/staff')
       if (!res.ok) throw new Error()
-      store.setStaff(await res.json())
+      setStaff(await res.json())
     } catch {
-      store.setError('Error al cargar el personal')
+      setError('Error al cargar el personal')
     } finally {
-      store.setIsLoading(false)
+      setIsLoading(false)
     }
-  }, [store])
+  }, [setIsLoading, setStaff, setError])
 
   const fetchStaffMember = useCallback(async (id: string) => {
-    store.setIsLoading(true)
+    setIsLoading(true)
     try {
       const res = await fetch(`/api/personal/staff/${id}`)
       if (!res.ok) throw new Error()
-      store.setCurrentStaff(await res.json())
+      setCurrentStaff(await res.json())
     } catch {
-      store.setError('Error al cargar el personal')
+      setError('Error al cargar el personal')
     } finally {
-      store.setIsLoading(false)
+      setIsLoading(false)
     }
-  }, [store])
+  }, [setIsLoading, setCurrentStaff, setError])
 
   const createStaff = useCallback(async (data: PersonalStaffFormData) => {
     try {
@@ -70,25 +81,25 @@ export function usePersonal() {
     try {
       const res = await fetch(`/api/personal/staff/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error()
-      store.setStaff(store.staff.filter(s => s.id !== id))
+      setStaff(usePersonalStore.getState().staff.filter(s => s.id !== id))
       toast.success('Personal eliminado correctamente')
       return true
     } catch {
       toast.error('Error al eliminar el personal')
       return false
     }
-  }, [store])
+  }, [setStaff])
 
   // ── Categories ──
   const fetchCategories = useCallback(async () => {
     try {
       const res = await fetch('/api/personal/categories')
       if (!res.ok) throw new Error()
-      store.setCategories(await res.json())
+      setCategories(await res.json())
     } catch {
-      store.setError('Error al cargar las categorías')
+      setError('Error al cargar las categorías')
     }
-  }, [store])
+  }, [setCategories, setError])
 
   const createCategory = useCallback(async (data: PersonalCategoryFormData) => {
     try {
@@ -99,14 +110,14 @@ export function usePersonal() {
       })
       if (!res.ok) throw new Error()
       const created = await res.json()
-      store.setCategories([...store.categories, created])
+      setCategories([...usePersonalStore.getState().categories, created])
       toast.success('Categoría creada correctamente')
       return created
     } catch {
       toast.error('Error al crear la categoría')
       return null
     }
-  }, [store])
+  }, [setCategories])
 
   const editCategory = useCallback(async (id: string, data: PersonalCategoryFormData) => {
     try {
@@ -117,14 +128,14 @@ export function usePersonal() {
       })
       if (!res.ok) throw new Error()
       const updated = await res.json()
-      store.setCategories(store.categories.map(c => c.id === id ? updated : c))
+      setCategories(usePersonalStore.getState().categories.map(c => c.id === id ? updated : c))
       toast.success('Categoría actualizada correctamente')
       return updated
     } catch {
       toast.error('Error al actualizar la categoría')
       return null
     }
-  }, [store])
+  }, [setCategories])
 
   const deleteCategory = useCallback(async (id: string) => {
     try {
@@ -133,17 +144,21 @@ export function usePersonal() {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error || 'Error al eliminar')
       }
-      store.setCategories(store.categories.filter(c => c.id !== id))
+      setCategories(usePersonalStore.getState().categories.filter(c => c.id !== id))
       toast.success('Categoría eliminada correctamente')
       return true
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Error al eliminar la categoría')
       return false
     }
-  }, [store])
+  }, [setCategories])
 
   return {
-    ...store,
+    staff,
+    categories,
+    currentStaff,
+    isLoading,
+    error,
     fetchStaff,
     fetchStaffMember,
     createStaff,

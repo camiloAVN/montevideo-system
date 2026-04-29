@@ -4,15 +4,16 @@ import { personalStaffSchema } from '@/lib/validations/personal'
 import { canViewModule, canEditModule } from '@/lib/auth/check-permission'
 import { ZodError } from 'zod'
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const permissionCheck = await canViewModule('personal')
     if (!permissionCheck.hasPermission) {
       return NextResponse.json({ error: permissionCheck.error }, { status: permissionCheck.status })
     }
 
+    const { id } = await params
     const staff = await prisma.personal.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { category: true },
     })
 
@@ -24,18 +25,19 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const permissionCheck = await canEditModule('personal')
     if (!permissionCheck.hasPermission) {
       return NextResponse.json({ error: permissionCheck.error }, { status: permissionCheck.status })
     }
 
+    const { id } = await params
     const body = await request.json()
     const data = personalStaffSchema.parse(body)
 
     const staff = await prisma.personal.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name: data.name,
         shiftRate: data.shiftRate ?? null,
@@ -56,14 +58,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const permissionCheck = await canEditModule('personal')
     if (!permissionCheck.hasPermission) {
       return NextResponse.json({ error: permissionCheck.error }, { status: permissionCheck.status })
     }
 
-    await prisma.personal.delete({ where: { id: params.id } })
+    const { id } = await params
+    await prisma.personal.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting personal staff member:', error)

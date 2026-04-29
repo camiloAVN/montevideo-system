@@ -199,6 +199,25 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Process catering lines
+    const cateringLines = (validatedData.cateringLines || []).map((line, index) => {
+      const lineTotal = new Decimal(line.total)
+      subtotal = subtotal.plus(lineTotal)
+
+      return {
+        type: line.type,
+        refId: line.refId || null,
+        description: line.description,
+        category: line.category || null,
+        people: line.people,
+        shifts: line.shifts,
+        quantity: line.quantity,
+        unitPrice: new Decimal(line.unitPrice),
+        total: lineTotal,
+        order: items.length + groups.length + conceptItems.length + index,
+      }
+    })
+
     const discount = validatedData.discount ? new Decimal(validatedData.discount) : new Decimal(0)
     const taxRate = validatedData.tax ? new Decimal(validatedData.tax) : new Decimal(16) // Default 16%
 
@@ -230,6 +249,9 @@ export async function POST(request: NextRequest) {
         },
         conceptItems: {
           create: conceptItems,
+        },
+        cateringLines: {
+          create: cateringLines,
         },
       },
       include: {
@@ -282,6 +304,9 @@ export async function POST(request: NextRequest) {
               },
             },
           },
+        },
+        cateringLines: {
+          orderBy: { order: 'asc' },
         },
       },
     })
