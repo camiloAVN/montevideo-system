@@ -22,7 +22,6 @@ import {
   UserCircle,
   ListTodo,
   History,
-  Mail,
   Settings,
   CalendarDays,
   CalendarRange,
@@ -451,21 +450,6 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                         >
                           <UserCog className="w-4 h-4" />
                           Usuarios
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="/dashboard/comunicados"
-                          onClick={onClose}
-                          className={cn(
-                            'flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
-                            isActive('/dashboard/comunicados')
-                              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                              : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'
-                          )}
-                        >
-                          <Mail className="w-4 h-4" />
-                          Comunicados
                         </Link>
                       </li>
                     </ul>
