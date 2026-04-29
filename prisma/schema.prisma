@@ -437,7 +437,8 @@ model Concept {
   name        String
   description String?  @db.Text
   supplierId  String?  // Contratista asociado (opcional)
-  unitPrice   Decimal? @db.Decimal(10, 2) // Precio de referencia
+  unitPrice        Decimal? @db.Decimal(10, 2) // Precio base (costo al contratista)
+  markupPercentage Decimal? @default(0) @db.Decimal(5, 2) // Porcentaje de ganancia
   category    String?  // Categoria del servicio: audio, iluminacion, catering, etc.
   notes       String?  @db.Text
   isActive    Boolean  @default(true)

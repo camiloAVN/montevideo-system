@@ -29,6 +29,7 @@ type ConceptWithSupplier = {
   name: string
   description: string | null
   unitPrice: number | null
+  markupPercentage: number | null
   category: string | null
   supplier?: { id: string; name: string; contactName?: string | null } | null
 }
@@ -370,23 +371,18 @@ const handleAddInventoryItem = (item: InventoryItem) => {
     setGroupSearch('')
   }
 
-  const calculateConceptUnitPrice = (basePrice: number, markupType: string, markupValue: number): number => {
-    if (markupType === 'PERCENTAGE') {
-      return basePrice + basePrice * (markupValue / 100)
-    }
-    return basePrice + markupValue
-  }
-
-  const handleAddConcept = (concept: ConceptWithSupplier) => {
+const handleAddConcept = (concept: ConceptWithSupplier) => {
     const basePrice = concept.unitPrice ? Number(concept.unitPrice) : 0
+    const markupPct = concept.markupPercentage ? Number(concept.markupPercentage) : 0
+    const finalPrice = Math.round(basePrice * (1 + markupPct / 100))
     appendConcept({
       conceptId: concept.id,
       name: concept.name,
       description: concept.description || '',
       basePrice,
       markupType: 'PERCENTAGE',
-      markupValue: 0,
-      unitPrice: basePrice,
+      markupValue: markupPct,
+      unitPrice: finalPrice,
       quantity: 1,
     })
     setShowConceptSearch(false)
@@ -828,87 +824,58 @@ const handleAddInventoryItem = (item: InventoryItem) => {
               <div className="space-y-4">
                 {conceptFields.map((field, index) => {
                   const basePrice = Number(watchedConceptItems?.[index]?.basePrice) || 0
-                  const markupType = watchedConceptItems?.[index]?.markupType || 'PERCENTAGE'
                   const markupValue = Number(watchedConceptItems?.[index]?.markupValue) || 0
+                  const unitPrice = Number(watchedConceptItems?.[index]?.unitPrice) || 0
                   const qty = Number(watchedConceptItems?.[index]?.quantity) || 1
-                  const unitPrice = calculateConceptUnitPrice(basePrice, markupType, markupValue)
                   const conceptTotal = qty * unitPrice
 
                   return (
                     <div key={field.id} className="rounded-lg border bg-violet-500/5 border-violet-500/20 p-4">
+                      {/* Hidden fields for backend */}
+                      <input type="hidden" {...register(`conceptItems.${index}.conceptId`)} />
+                      <input type="hidden" {...register(`conceptItems.${index}.description`)} />
+                      <input type="hidden" {...register(`conceptItems.${index}.basePrice`, { valueAsNumber: true })} />
+                      <input type="hidden" {...register(`conceptItems.${index}.markupType`)} />
+                      <input type="hidden" {...register(`conceptItems.${index}.markupValue`, { valueAsNumber: true })} />
+                      <input type="hidden" {...register(`conceptItems.${index}.unitPrice`, { valueAsNumber: true })} />
+
                       <div className="grid grid-cols-12 gap-4">
-                        <div className="col-span-12 md:col-span-5">
+                        <div className="col-span-12 md:col-span-8">
                           <div className="flex items-center gap-2 mb-1">
                             <label className="block text-sm font-medium text-gray-300">Concepto</label>
                             <span className="px-2 py-0.5 rounded text-xs bg-violet-500/20 text-violet-400">Servicio</span>
                           </div>
                           <Input placeholder="Nombre del concepto" {...register(`conceptItems.${index}.name`)} />
-                          <input type="hidden" {...register(`conceptItems.${index}.conceptId`)} />
-                          <input type="hidden" {...register(`conceptItems.${index}.description`)} />
                         </div>
 
-                        <div className="col-span-4 md:col-span-1">
+                        <div className="col-span-4 md:col-span-2">
                           <Input label="Cant." type="number" min="1" step="1"
                             {...register(`conceptItems.${index}.quantity`, { valueAsNumber: true })} />
                         </div>
 
-                        <div className="col-span-4 md:col-span-2">
-                          <Input label="Precio base" type="number" min="0" step="1" placeholder="0"
-                            {...register(`conceptItems.${index}.basePrice`, {
-                              valueAsNumber: true,
-                              onChange: (e) => {
-                                const newBase = Number(e.target.value) || 0
-                                setValue(`conceptItems.${index}.unitPrice`, calculateConceptUnitPrice(newBase, markupType, markupValue))
-                              },
-                            })} />
-                        </div>
-
-                        <div className="col-span-4 md:col-span-2">
-                          <Select label="Ganancia"
-                            options={[
-                              { value: 'PERCENTAGE', label: '% Porcentaje' },
-                              { value: 'FIXED_AMOUNT', label: '$ Monto fijo' },
-                            ]}
-                            {...register(`conceptItems.${index}.markupType`, {
-                              onChange: (e) => {
-                                setValue(`conceptItems.${index}.unitPrice`, calculateConceptUnitPrice(basePrice, e.target.value, markupValue))
-                              },
-                            })} />
-                        </div>
-
-                        <div className="col-span-4 md:col-span-2">
-                          <Input label={markupType === 'PERCENTAGE' ? 'Valor (%)' : 'Valor ($)'}
-                            type="number" min="0" step="0.01" placeholder="0"
-                            {...register(`conceptItems.${index}.markupValue`, {
-                              valueAsNumber: true,
-                              onChange: (e) => {
-                                const newMarkup = Number(e.target.value) || 0
-                                setValue(`conceptItems.${index}.unitPrice`, calculateConceptUnitPrice(basePrice, markupType, newMarkup))
-                              },
-                            })} />
-                        </div>
-
-                        <div className="col-span-12 flex items-center gap-4 pt-2 border-t border-violet-500/10">
-                          <div className="flex-1 grid grid-cols-3 gap-4 text-sm">
-                            <div className="text-center">
-                              <span className="text-gray-500 block text-xs">Precio base</span>
-                              <span className="text-gray-300">{formatCurrency(basePrice)}</span>
-                            </div>
-                            <div className="text-center">
-                              <span className="text-gray-500 block text-xs">Precio al cliente</span>
-                              <span className="text-violet-300 font-medium">{formatCurrency(unitPrice)}</span>
-                              <input type="hidden" {...register(`conceptItems.${index}.unitPrice`, { valueAsNumber: true })} />
-                            </div>
-                            <div className="text-center">
-                              <span className="text-gray-500 block text-xs">Total</span>
-                              <span className="text-green-400 font-medium">{formatCurrency(conceptTotal)}</span>
-                            </div>
-                          </div>
+                        <div className="col-span-8 md:col-span-2 flex items-end justify-end">
                           <Button type="button" variant="ghost" size="sm"
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 mb-0.5"
                             onClick={() => removeConcept(index)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
+                        </div>
+
+                        <div className="col-span-12 pt-2 border-t border-violet-500/10">
+                          <div className="grid grid-cols-3 gap-4 text-sm text-center">
+                            <div>
+                              <span className="text-gray-500 block text-xs">Precio base</span>
+                              <span className="text-gray-300">{formatCurrency(basePrice)}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500 block text-xs">Ganancia ({markupValue}%)</span>
+                              <span className="text-emerald-400">+{formatCurrency(unitPrice - basePrice)}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500 block text-xs">Precio final × {qty}</span>
+                              <span className="text-violet-300 font-bold">{formatCurrency(conceptTotal)}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

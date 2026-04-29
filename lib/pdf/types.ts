@@ -14,6 +14,9 @@ export interface PDFTemplateConfig {
   companyPhone: string
   companyEmail: string
   companyWebsite: string
+  companyLocation?: string
+  companyDaySchedule?: string
+  companyNightSchedule?: string
 }
 
 export const DEFAULT_PDF_CONFIG: PDFTemplateConfig = {
@@ -32,4 +35,7 @@ export const DEFAULT_PDF_CONFIG: PDFTemplateConfig = {
   companyPhone: '',
   companyEmail: 'info@montevideocc.com',
   companyWebsite: 'www.montevideocc.com',
+  companyLocation: '',
+  companyDaySchedule: '',
+  companyNightSchedule: '',
 }

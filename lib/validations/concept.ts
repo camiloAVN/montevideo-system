@@ -5,6 +5,7 @@ export const conceptSchema = z.object({
   description: z.string().optional(),
   supplierId: z.string().optional().nullable(),
   unitPrice: z.number().min(0, 'El precio debe ser positivo').optional().nullable(),
+  markupPercentage: z.number().min(0, 'La ganancia debe ser positiva').max(10000).optional().nullable(),
   category: z.string().optional(),
   notes: z.string().optional(),
   isActive: z.boolean(),
@@ -18,6 +19,7 @@ export type Concept = {
   description: string | null
   supplierId: string | null
   unitPrice: number | null
+  markupPercentage: number | null
   category: string | null
   notes: string | null
   isActive: boolean

@@ -618,6 +618,38 @@ export default function ConfiguracionPage() {
                 />
               </div>
             </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">Ubicación</label>
+              <input
+                type="text"
+                value={draft.companyLocation ?? ''}
+                onChange={(e) => updateDraft({ companyLocation: e.target.value })}
+                className={INPUT_CLASS}
+                placeholder="Calle 123 #45-67, Ciudad"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-400 mb-1.5 block">Horario diurno</label>
+                <input
+                  type="text"
+                  value={draft.companyDaySchedule ?? ''}
+                  onChange={(e) => updateDraft({ companyDaySchedule: e.target.value })}
+                  className={INPUT_CLASS}
+                  placeholder="Lun–Vie 8:00 am – 6:00 pm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1.5 block">Horario nocturno</label>
+                <input
+                  type="text"
+                  value={draft.companyNightSchedule ?? ''}
+                  onChange={(e) => updateDraft({ companyNightSchedule: e.target.value })}
+                  className={INPUT_CLASS}
+                  placeholder="Lun–Vie 6:00 pm – 2:00 am"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

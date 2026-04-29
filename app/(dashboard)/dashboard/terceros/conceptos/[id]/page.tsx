@@ -137,15 +137,39 @@ export default function ConceptDetailPage() {
           <Card.Header>
             <Card.Title className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-green-400" />
-              Precio de Referencia
+              Precios
             </Card.Title>
           </Card.Header>
           <Card.Content>
-            {currentConcept.unitPrice ? (
-              <p className="text-3xl font-bold text-green-400">
-                {formatCurrency(Number(currentConcept.unitPrice))}
-              </p>
-            ) : (
+            {currentConcept.unitPrice ? (() => {
+              const base = Number(currentConcept.unitPrice)
+              const pct = Number(currentConcept.markupPercentage || 0)
+              const final = Math.round(base * (1 + pct / 100))
+              const markup = final - base
+              return (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="p-3 rounded-lg bg-gray-800/50">
+                      <p className="text-xs text-gray-500 mb-1">Precio base</p>
+                      <p className="text-base font-semibold text-gray-300">{formatCurrency(base)}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-emerald-500/10">
+                      <p className="text-xs text-gray-500 mb-1">Ganancia</p>
+                      <p className="text-base font-semibold text-emerald-400">
+                        {pct > 0 ? `+${pct}%` : '0%'}
+                      </p>
+                      {markup > 0 && (
+                        <p className="text-xs text-emerald-500">{formatCurrency(markup)}</p>
+                      )}
+                    </div>
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                      <p className="text-xs text-gray-500 mb-1">Precio final</p>
+                      <p className="text-base font-bold text-white">{formatCurrency(final)}</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })() : (
               <p className="text-gray-400">Sin precio definido</p>
             )}
           </Card.Content>

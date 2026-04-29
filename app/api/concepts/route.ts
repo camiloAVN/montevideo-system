@@ -106,8 +106,11 @@ export async function POST(request: NextRequest) {
       data: {
         name: validatedData.name,
         description: validatedData.description || null,
-        supplierId: validatedData.supplierId || null,
+        supplier: validatedData.supplierId
+          ? { connect: { id: validatedData.supplierId } }
+          : undefined,
         unitPrice: validatedData.unitPrice ?? null,
+        markupPercentage: validatedData.markupPercentage ?? 0,
         category: validatedData.category || null,
         notes: validatedData.notes || null,
         isActive: validatedData.isActive ?? true,

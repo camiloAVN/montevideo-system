@@ -62,12 +62,17 @@ function makeStyles(config: PDFTemplateConfig) {
     metaLabel: { fontSize: fs - 2, color: '#9ca3af', letterSpacing: 0.5, marginBottom: 3 },
     metaValue: { fontSize: fs - 1, color: '#1f2937', fontWeight: 'bold' },
     metaValueSub: { fontSize: fs - 2, color: '#6b7280', marginTop: 1 },
-    // Client card
+    // Client / company info row
+    clientRow: {
+      flexDirection: 'row',
+      marginBottom: 20,
+      gap: 12,
+    },
     clientCard: {
+      flex: 1,
       backgroundColor: '#f9fafb',
       borderRadius: 6,
       padding: 14,
-      marginBottom: 20,
       borderLeft: `3 solid ${accentColor}`,
     },
     clientCardTitle: {
@@ -333,20 +338,34 @@ export function QuotationModernDocument({ quotation, config }: Props) {
             </View>
           </View>
 
-          {/* Client card */}
-          <View style={styles.clientCard}>
-            <Text style={styles.clientCardTitle}>FACTURAR A</Text>
-            <Text style={styles.clientInfo}>
-              {quotation.client.name}{'\n'}
-              {quotation.client.company ? `${quotation.client.company}\n` : ''}
-              {quotation.client.email}{'\n'}
-              {quotation.client.phone ? `${quotation.client.phone}\n` : ''}
-              {quotation.client.address ? `${quotation.client.address}\n` : ''}
-              {quotation.client.city && quotation.client.country
-                ? `${quotation.client.city}, ${quotation.client.country}\n`
-                : ''}
-              {quotation.client.taxId ? `NIT: ${quotation.client.taxId}` : ''}
-            </Text>
+          {/* Client + company info row */}
+          <View style={styles.clientRow}>
+            {/* Client card */}
+            <View style={styles.clientCard}>
+              <Text style={styles.clientCardTitle}>FACTURAR A</Text>
+              <Text style={styles.clientInfo}>
+                {quotation.client.name}{'\n'}
+                {quotation.client.company ? `${quotation.client.company}\n` : ''}
+                {quotation.client.email}{'\n'}
+                {quotation.client.phone ? `${quotation.client.phone}\n` : ''}
+                {quotation.client.address ? `${quotation.client.address}\n` : ''}
+                {quotation.client.city && quotation.client.country
+                  ? `${quotation.client.city}, ${quotation.client.country}\n`
+                  : ''}
+                {quotation.client.taxId ? `NIT: ${quotation.client.taxId}` : ''}
+              </Text>
+            </View>
+            {/* Company extra info */}
+            {(config.companyLocation || config.companyDaySchedule || config.companyNightSchedule) && (
+              <View style={styles.clientCard}>
+                <Text style={styles.clientCardTitle}>INFORMACIÓN DE CONTACTO</Text>
+                <Text style={styles.clientInfo}>
+                  {config.companyLocation ? `${config.companyLocation}\n` : ''}
+                  {config.companyDaySchedule ? `Diurno: ${config.companyDaySchedule}\n` : ''}
+                  {config.companyNightSchedule ? `Nocturno: ${config.companyNightSchedule}` : ''}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Title / Description */}
