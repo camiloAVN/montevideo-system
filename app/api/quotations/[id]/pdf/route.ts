@@ -31,6 +31,9 @@ function parseConfig(sp: URLSearchParams): PDFTemplateConfig {
     companyPhone: sp.get('companyPhone') ?? '',
     companyEmail: sp.get('companyEmail') || DEFAULT_PDF_CONFIG.companyEmail,
     companyWebsite: sp.get('companyWebsite') || DEFAULT_PDF_CONFIG.companyWebsite,
+    companyLocation: sp.get('companyLocation') || undefined,
+    companyDaySchedule: sp.get('companyDaySchedule') || undefined,
+    companyNightSchedule: sp.get('companyNightSchedule') || undefined,
   }
 }
 

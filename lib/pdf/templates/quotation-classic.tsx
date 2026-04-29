@@ -272,7 +272,6 @@ export function QuotationClassicDocument({ quotation, config }: Props) {
                 config.companyNit ? `NIT: ${config.companyNit}` : null,
                 config.companyPhone ? `Tel: ${config.companyPhone}` : null,
                 config.companyEmail,
-                config.companyWebsite,
               ].filter(Boolean).join('\n')}
             </Text>
           </View>
@@ -304,13 +303,14 @@ export function QuotationClassicDocument({ quotation, config }: Props) {
             </Text>
           </View>
           {/* Company extra info */}
-          {(config.companyLocation || config.companyDaySchedule || config.companyNightSchedule) && (
+          {(config.companyLocation || config.companyDaySchedule || config.companyNightSchedule || config.companyWebsite) && (
             <View style={styles.clientCol}>
-              <Text style={styles.clientColLabel}>INFORMACIÓN DE CONTACTO</Text>
+              <Text style={styles.clientColLabel}>{config.companyName.toUpperCase()}</Text>
               <Text style={styles.clientColInfo}>
                 {config.companyLocation ? `${config.companyLocation}\n` : ''}
                 {config.companyDaySchedule ? `Diurno: ${config.companyDaySchedule}\n` : ''}
-                {config.companyNightSchedule ? `Nocturno: ${config.companyNightSchedule}` : ''}
+                {config.companyNightSchedule ? `Nocturno: ${config.companyNightSchedule}\n` : ''}
+                {config.companyWebsite ? config.companyWebsite : ''}
               </Text>
             </View>
           )}

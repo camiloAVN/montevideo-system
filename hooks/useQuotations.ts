@@ -197,6 +197,9 @@ export function useQuotations() {
         companyPhone: config.companyPhone ?? '',
         companyEmail: config.companyEmail,
         companyWebsite: config.companyWebsite,
+        companyLocation: config.companyLocation ?? '',
+        companyDaySchedule: config.companyDaySchedule ?? '',
+        companyNightSchedule: config.companyNightSchedule ?? '',
       })
       const response = await fetch(`/api/quotations/${id}/pdf?${params}`)
 

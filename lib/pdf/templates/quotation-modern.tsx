@@ -356,13 +356,14 @@ export function QuotationModernDocument({ quotation, config }: Props) {
               </Text>
             </View>
             {/* Company extra info */}
-            {(config.companyLocation || config.companyDaySchedule || config.companyNightSchedule) && (
+            {(config.companyLocation || config.companyDaySchedule || config.companyNightSchedule || config.companyWebsite) && (
               <View style={styles.clientCard}>
-                <Text style={styles.clientCardTitle}>INFORMACIÓN DE CONTACTO</Text>
+                <Text style={styles.clientCardTitle}>{config.companyName.toUpperCase()}</Text>
                 <Text style={styles.clientInfo}>
                   {config.companyLocation ? `${config.companyLocation}\n` : ''}
                   {config.companyDaySchedule ? `Diurno: ${config.companyDaySchedule}\n` : ''}
-                  {config.companyNightSchedule ? `Nocturno: ${config.companyNightSchedule}` : ''}
+                  {config.companyNightSchedule ? `Nocturno: ${config.companyNightSchedule}\n` : ''}
+                  {config.companyWebsite ? config.companyWebsite : ''}
                 </Text>
               </View>
             )}
@@ -435,9 +436,7 @@ export function QuotationModernDocument({ quotation, config }: Props) {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            {config.companyEmail} · {config.companyWebsite}
-          </Text>
+          <Text style={styles.footerText}>{config.companyEmail}</Text>
           <Text style={styles.footerAccent}>{config.companyName}</Text>
         </View>
       </Page>
