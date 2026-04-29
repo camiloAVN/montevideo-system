@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+// unsafe-eval is only needed by Next.js HMR in development; strip it in production
+const isDev = process.env.NODE_ENV !== 'production'
+
 const securityHeaders = [
   {
     key: 'X-DNS-Prefetch-Control',
@@ -33,7 +36,9 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+      isDev
+        ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
+        : "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' blob: data: https:",
       "font-src 'self' data:",
@@ -46,15 +51,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // Workaround for Turbopack + native modules on Windows
+  // Keep native modules out of the Next.js bundle so Node can load them directly
   serverExternalPackages: ['@prisma/client', 'prisma', 'bcrypt'],
-
-  // Use webpack instead of Turbopack for dev (Windows compatibility)
-  experimental: {
-    turbo: {
-      // Disable Turbopack's problematic junction points on Windows
-    },
-  },
 
   // Security headers for all routes
   async headers() {

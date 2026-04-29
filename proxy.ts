@@ -1,20 +1,3 @@
-import { auth } from "@/auth"
-
-export default auth((req) => {
-  const isLoggedIn = !!req.auth
-  const { pathname } = req.nextUrl
-
-  // Protect dashboard routes
-  if (pathname.startsWith('/dashboard') && !isLoggedIn) {
-    return Response.redirect(new URL('/login', req.url))
-  }
-
-  // Redirect authenticated users away from login page
-  if (pathname === '/login' && isLoggedIn) {
-    return Response.redirect(new URL('/dashboard', req.url))
-  }
-})
-
-export const config = {
-  matcher: ['/dashboard/:path*', '/login'],
-}
+// The actual Next.js middleware lives in middleware.ts.
+// This file is kept only for git history continuity and is not loaded by Next.js.
+export { default, config } from './middleware'

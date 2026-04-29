@@ -13,6 +13,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     maxAge: 8 * 60 * 60, // 8 hours (session expiration)
     updateAge: 60 * 60, // 1 hour (refresh session every hour)
   },
+  cookies: {
+    sessionToken: {
+      options: {
+        httpOnly: true,
+        sameSite: 'strict' as const,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
   pages: {
     signIn: "/login",
     error: "/login",
