@@ -227,7 +227,7 @@ function SectionBlock({
           {row.details && <Text style={styles.itemDetails}>{row.details}</Text>}
         </View>
         <Text style={styles.col3}>{row.qtyDisplay}</Text>
-        <Text style={styles.col4}>{formatCurrency(row.unitPrice)}</Text>
+        <Text style={styles.col4}>{row.unitPrice !== null ? formatCurrency(row.unitPrice) : '-'}</Text>
         <Text style={styles.col5}>{formatCurrency(row.total)}</Text>
       </View>
     )

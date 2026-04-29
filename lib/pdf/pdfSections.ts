@@ -4,7 +4,7 @@ export type PdfRow = {
   badge?: string
   details?: string
   qtyDisplay: string
-  unitPrice: number
+  unitPrice: number | null
   total: number
 }
 
@@ -129,7 +129,7 @@ export function buildPdfSections(quotation: any): PdfSection[] {
           : isCompanyStaff
           ? `${line.people ?? 1} pers.`
           : String(line.quantity),
-        unitPrice: isFixed ? 0 : Number(line.unitPrice),
+        unitPrice: isFixed ? null : Number(line.unitPrice),
         total: lineTotal,
       }
     })
