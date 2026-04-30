@@ -8,9 +8,10 @@
   "scripts": {
     "dev": "next dev",
     "dev:turbo": "next dev --turbo",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "npm run prisma:deploy && next build",
     "postinstall": "prisma generate",
     "start": "next start",
+    "prisma:deploy":"npx prisma migrate deploy && prisma generate",
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
     "email:dev": "email dev"
