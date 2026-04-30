@@ -1,4 +1,4 @@
-# Xenith CRM
+# Montevideo CRM
 
 Sistema de gestión de clientes, proyectos y cotizaciones para Xenith.
 

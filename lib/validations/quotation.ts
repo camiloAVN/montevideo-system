@@ -16,6 +16,7 @@ export const quotationCateringLineSchema = z.object({
 export const quotationItemSchema = z.object({
   inventoryItemId: z.string().optional().nullable(),
   description: z.string().min(3, 'La descripción debe tener al menos 3 caracteres'),
+  category: z.string().optional().nullable(),
   quantity: z.number().min(1, 'La cantidad debe ser al menos 1'),
   unitPrice: z.number().min(0, 'El precio unitario debe ser positivo'),
 })
@@ -119,6 +120,7 @@ export type QuotationItem = {
   quotationId: string
   inventoryItemId: string | null
   description: string
+  category: string | null
   quantity: number
   unitPrice: number
   total: number

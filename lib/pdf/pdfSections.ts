@@ -40,7 +40,9 @@ export function buildPdfSections(quotation: any): PdfSection[] {
   if (quotation.items?.length) {
     for (const item of quotation.items) {
       const catName: string =
-        item.inventoryItem?.product?.category?.name || 'Equipos Varios'
+        item.category ||
+        item.inventoryItem?.product?.category?.name ||
+        'Equipos Varios'
       if (!itemsByCategory.has(catName)) itemsByCategory.set(catName, [])
 
       itemsByCategory.get(catName)!.push({

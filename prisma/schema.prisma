@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // User model (managed by Auth.js)
@@ -241,6 +242,7 @@ model QuotationItem {
   quotationId     String
   inventoryItemId String?  // Optional link to inventory item
   description     String
+  category        String?  // Custom category for PDF grouping
   quantity        Int
   unitPrice       Decimal  @db.Decimal(10, 2)
   total           Decimal  @db.Decimal(10, 2)

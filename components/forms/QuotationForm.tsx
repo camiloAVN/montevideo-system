@@ -175,6 +175,7 @@ export function QuotationForm({
           items: quotation.items.map((item) => ({
             inventoryItemId: item.inventoryItemId || null,
             description: item.description,
+            category: item.category || '',
             quantity: item.quantity,
             unitPrice: item.unitPrice,
           })),
@@ -343,6 +344,7 @@ const handleAddInventoryItem = (item: InventoryItem) => {
     appendItem({
       inventoryItemId: item.id,
       description: item.product?.name || '',
+      category: '',
       quantity: 1,
       unitPrice: rentalPrice,
     })
@@ -1311,7 +1313,7 @@ const handleAddConcept = (concept: ConceptWithSupplier) => {
                 </p>
               </div>
               <Button type="button" variant="outline" size="sm"
-                onClick={() => appendItem({ inventoryItemId: null, description: '', quantity: 1, unitPrice: 0 })}>
+                onClick={() => appendItem({ inventoryItemId: null, description: '', category: '', quantity: 1, unitPrice: 0 })}>
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar Item
               </Button>
@@ -1340,20 +1342,25 @@ const handleAddConcept = (concept: ConceptWithSupplier) => {
                     return (
                       <div key={field.id}
                         className="grid grid-cols-12 gap-4 p-4 rounded-lg border bg-gray-900/30 border-gray-800">
-                        <div className="col-span-12 md:col-span-6">
+                        <div className="col-span-12 md:col-span-4">
                           <label className="block text-sm font-medium text-gray-300 mb-1.5">Descripción *</label>
                           <Input placeholder="Descripción del item"
                             error={errors.items?.[index]?.description?.message}
                             {...register(`items.${index}.description`)} />
                           <input type="hidden" {...register(`items.${index}.inventoryItemId`)} />
                         </div>
-                        <div className="col-span-4 md:col-span-2">
-                          <Input label="Cantidad *" type="number" min="1" step="1"
+                        <div className="col-span-12 md:col-span-3">
+                          <label className="block text-sm font-medium text-gray-300 mb-1.5">Categoría</label>
+                          <Input placeholder="Ej: Sonido, Video, Staging…"
+                            {...register(`items.${index}.category`)} />
+                        </div>
+                        <div className="col-span-4 md:col-span-1">
+                          <Input label="Cant." type="number" min="1" step="1"
                             error={errors.items?.[index]?.quantity?.message}
                             {...register(`items.${index}.quantity`, { valueAsNumber: true })} />
                         </div>
                         <div className="col-span-4 md:col-span-2">
-                          <Input label="Precio Unit. *" type="number" min="0" step="1" placeholder="0"
+                          <Input label="Precio Unit." type="number" min="0" step="1" placeholder="0"
                             error={errors.items?.[index]?.unitPrice?.message}
                             {...register(`items.${index}.unitPrice`, { valueAsNumber: true })} />
                         </div>

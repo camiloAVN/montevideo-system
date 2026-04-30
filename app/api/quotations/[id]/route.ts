@@ -165,6 +165,7 @@ export async function PUT(
       return {
         inventoryItemId: item.inventoryItemId || null,
         description: item.description,
+        category: item.category || null,
         quantity: item.quantity,
         unitPrice: new Decimal(item.unitPrice),
         total: itemTotal,

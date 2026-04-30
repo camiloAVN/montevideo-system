@@ -26,6 +26,23 @@ async function main() {
 
   console.log('Created superadmin:', superAdmin.email)
 
+  // Create second superadmin
+  const superAdmin2 = await prisma.user.upsert({
+    where: { email: 'nelsonshock@gmail.com' },
+    update: {
+      password: hashedPassword,
+      role: 'SUPERADMIN',
+    },
+    create: {
+      email: 'nelsonshock@gmail.com',
+      name: 'Nelson',
+      password: hashedPassword,
+      role: 'SUPERADMIN',
+    },
+  })
+
+  console.log('Created superadmin:', superAdmin2.email)
+
   // Find old admin user
   const oldAdmin = await prisma.user.findUnique({
     where: { email: 'admin@xenith.com' },
@@ -139,8 +156,8 @@ async function main() {
   console.log('Seeding completed!')
   console.log('')
   console.log('Credenciales:')
-  console.log('   Email: camilo.vargas@xenith.com.co')
-  console.log('   Password: admin123')
+  console.log('   Email: camilo.vargas@xenith.com.co  |  Password: admin123')
+  console.log('   Email: nelsonshock@gmail.com        |  Password: admin123')
   console.log('')
 }
 
