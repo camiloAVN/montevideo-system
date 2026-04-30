@@ -41,7 +41,10 @@ export function useAuth() {
     }
 
     // Sign out and let NextAuth handle the redirect
-    await signOut({ callbackUrl: '/login' })
+    const loginUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}/login`
+      : '/login'
+    await signOut({ callbackUrl: loginUrl })
   }
 
   return {
