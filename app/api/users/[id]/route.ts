@@ -2,19 +2,29 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db/prisma'
 import { hash } from 'bcrypt'
-import { moduleLabels, updateUserSchema, SUPERADMIN_EMAIL } from '@/lib/validations/user'
+import { moduleLabels, updateUserSchema } from '@/lib/validations/user'
 import { createAuditLog, getRequestClientInfo } from '@/lib/audit/log'
 import { ZodError } from 'zod'
 
 // Helper to check if user is superadmin or admin
 async function isAdminOrAbove(session: any): Promise<boolean> {
   if (!session?.user?.id) return false
-  if (session.user.email === SUPERADMIN_EMAIL) return true
+  if (session.user.role === 'SUPERADMIN') return true
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { role: true },
   })
   return user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
+}
+
+async function isCallerSuperAdmin(session: any): Promise<boolean> {
+  if (!session?.user?.id) return false
+  if (session.user.role === 'SUPERADMIN') return true
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  })
+  return user?.role === 'SUPERADMIN'
 }
 
 function normalizePermissions(permissions: Array<{ module: string; canView: boolean; canEdit: boolean }>) {
@@ -161,16 +171,8 @@ export async function PUT(
       )
     }
 
-    // No permitir modificar al superadmin
-    if (existingUser.email === SUPERADMIN_EMAIL) {
-      return NextResponse.json(
-        { error: 'No se puede modificar al superadmin' },
-        { status: 400 }
-      )
-    }
-
-    // No permitir cambiar rol a SUPERADMIN
-    if (validatedData.role === 'SUPERADMIN') {
+    // No permitir cambiar rol a SUPERADMIN a menos que el que edita sea superadmin
+    if (validatedData.role === 'SUPERADMIN' && !await isCallerSuperAdmin(session)) {
       return NextResponse.json(
         { error: 'No se puede asignar rol de superadmin' },
         { status: 400 }
@@ -370,8 +372,8 @@ export async function DELETE(
       )
     }
 
-    // No permitir eliminar al superadmin
-    if (existingUser.email === SUPERADMIN_EMAIL) {
+    // No permitir eliminar a un superadmin
+    if (existingUser.role === 'SUPERADMIN') {
       return NextResponse.json(
         { error: 'No se puede eliminar al superadmin' },
         { status: 400 }

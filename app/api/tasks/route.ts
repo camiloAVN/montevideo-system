@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { canViewModule } from '@/lib/auth/check-permission'
 import { auth } from '@/auth'
-import { SUPERADMIN_EMAIL } from '@/lib/validations/user'
 
 // GET /api/tasks - List all tasks with filters
 export async function GET(request: NextRequest) {

@@ -29,6 +29,7 @@ export const authConfig: NextAuthConfig = {
         token.email = user.email
         token.name = user.name
         token.picture = user.image
+        token.role = (user as any).role
         token.iat = Math.floor(Date.now() / 1000)
       }
       const tokenAge = Math.floor(Date.now() / 1000) - ((token.iat as number) || 0)
@@ -46,6 +47,7 @@ export const authConfig: NextAuthConfig = {
         session.user.email = token.email as string
         session.user.name = token.name as string | null
         session.user.image = token.picture as string | null
+        ;(session.user as any).role = token.role as string
       }
       return session
     },

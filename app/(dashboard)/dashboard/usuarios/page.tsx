@@ -34,7 +34,6 @@ import {
   moduleLabels,
   moduleGroups,
   moduleGroupLabels,
-  SUPERADMIN_EMAIL,
 } from '@/lib/validations/user'
 import { cn } from '@/lib/utils/cn'
 
@@ -68,7 +67,7 @@ export default function UsersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Check if current user is superadmin
-  const isSuperAdmin = session?.user?.email === SUPERADMIN_EMAIL
+  const isSuperAdmin = (session?.user as any)?.role === 'SUPERADMIN'
   const [hasAccess, setHasAccess] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -80,7 +79,7 @@ export default function UsersPage() {
     }
 
     // Superadmin always has access
-    if (session.user.email === SUPERADMIN_EMAIL) {
+    if ((session.user as any).role === 'SUPERADMIN') {
       setHasAccess(true)
       fetchUsers()
       return
@@ -364,7 +363,7 @@ export default function UsersPage() {
                     <tr key={user.id}>
                       <td className="font-medium">
                         <div className="flex items-center gap-2">
-                          {user.email === SUPERADMIN_EMAIL && (
+                          {user.role === 'SUPERADMIN' && (
                             <Shield className="w-4 h-4 text-red-400" />
                           )}
                           {user.name || 'Sin nombre'}
@@ -391,7 +390,7 @@ export default function UsersPage() {
                         </span>
                       </td>
                       <td>
-                        {user.email === SUPERADMIN_EMAIL ? (
+                        {user.role === 'SUPERADMIN' ? (
                           <span className="text-gray-500 text-sm">Todos</span>
                         ) : user.permissions && user.permissions.length > 0 ? (
                           <span className="text-gray-400 text-sm">
@@ -420,7 +419,7 @@ export default function UsersPage() {
                         })}
                       </td>
                       <td>
-                        {user.email !== SUPERADMIN_EMAIL && (
+                        {user.role !== 'SUPERADMIN' && (
                           <div className="flex items-center gap-2">
                             <Button
                               variant="ghost"

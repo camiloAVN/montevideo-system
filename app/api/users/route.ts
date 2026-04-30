@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db/prisma'
 import { hash } from 'bcrypt'
-import { createUserSchema, SUPERADMIN_EMAIL } from '@/lib/validations/user'
+import { createUserSchema } from '@/lib/validations/user'
 import { createAuditLog, getRequestClientInfo } from '@/lib/audit/log'
 import { ZodError } from 'zod'
 
 // Helper to check if user is superadmin or admin
 async function isAdminOrAbove(session: any): Promise<boolean> {
   if (!session?.user?.id) return false
-  if (session.user.email === SUPERADMIN_EMAIL) return true
+  if (session.user.role === 'SUPERADMIN') return true
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { role: true },
@@ -109,8 +109,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // No permitir crear otro SUPERADMIN
-    if (validatedData.role === 'SUPERADMIN') {
+    // Solo un superadmin puede crear otro superadmin
+    if (validatedData.role === 'SUPERADMIN' && session.user.role !== 'SUPERADMIN') {
       return NextResponse.json(
         { error: 'No se puede crear otro superadmin' },
         { status: 400 }
