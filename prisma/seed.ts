@@ -6,18 +6,25 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Seeding database...')
 
-  // Hash password with bcrypt
-  const hashedPassword = await hash('admin123', 12)
+  const adminEmail = process.env.ADMIN_EMAIL ?? 'camilo.vargas@xenith.com.co'
+  const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin123'
+  const admin2Email = process.env.ADMIN2_EMAIL ?? 'nelsonshock@gmail.com'
+  const admin2Password = process.env.ADMIN2_PASSWORD ?? adminPassword
+
+  const hashedPassword = await hash(adminPassword, 12)
+  const hashedPassword2 = adminPassword === admin2Password
+    ? hashedPassword
+    : await hash(admin2Password, 12)
 
   // Create superadmin user first
   const superAdmin = await prisma.user.upsert({
-    where: { email: 'camilo.vargas@xenith.com.co' },
+    where: { email: adminEmail },
     update: {
       password: hashedPassword,
       role: 'SUPERADMIN',
     },
     create: {
-      email: 'camilo.vargas@xenith.com.co',
+      email: adminEmail,
       name: 'Camilo Vargas',
       password: hashedPassword,
       role: 'SUPERADMIN',
@@ -28,15 +35,15 @@ async function main() {
 
   // Create second superadmin
   const superAdmin2 = await prisma.user.upsert({
-    where: { email: 'nelsonshock@gmail.com' },
+    where: { email: admin2Email },
     update: {
-      password: hashedPassword,
+      password: hashedPassword2,
       role: 'SUPERADMIN',
     },
     create: {
-      email: 'nelsonshock@gmail.com',
+      email: admin2Email,
       name: 'Nelson',
-      password: hashedPassword,
+      password: hashedPassword2,
       role: 'SUPERADMIN',
     },
   })
@@ -156,8 +163,8 @@ async function main() {
   console.log('Seeding completed!')
   console.log('')
   console.log('Credenciales:')
-  console.log('   Email: camilo.vargas@xenith.com.co  |  Password: admin123')
-  console.log('   Email: nelsonshock@gmail.com        |  Password: admin123')
+  console.log(`   Email: ${adminEmail}  |  Password: (ADMIN_PASSWORD)`)
+  console.log(`   Email: ${admin2Email}  |  Password: (ADMIN2_PASSWORD ?? ADMIN_PASSWORD)`)
   console.log('')
 }
 
