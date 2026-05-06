@@ -43,6 +43,7 @@ const securityHeaders = [
       "img-src 'self' blob: data: https:",
       "font-src 'self' data:",
       "connect-src 'self' https:",
+      "frame-src https://www.google.com https://maps.google.com",
       "frame-ancestors 'self'",
       "form-action 'self'",
       "base-uri 'self'",

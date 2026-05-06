@@ -4,8 +4,8 @@ import { Metadata } from 'next'
 import { Mail, Phone, MapPin, Clock } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Contacto - XENITH',
-  description: 'Contáctanos para discutir tu proyecto. Estamos listos para ayudarte a transformar tus ideas en realidad.',
+  title: 'Contacto - Montevideo Convention Center',
+  description: 'Contáctanos para cotizar tu evento. Estamos listos para hacer realidad tu próxima experiencia.',
 }
 
 export default function ContactoPage() {
@@ -13,25 +13,25 @@ export default function ContactoPage() {
     {
       icon: Mail,
       title: 'Email',
-      value: 'contacto@xenith.com',
-      link: 'mailto:contacto@xenith.com',
+      value: 'info@Montevideoconventioncenter.com',
+      link: 'mailto:info@Montevideoconventioncenter.com',
     },
     {
       icon: Phone,
       title: 'Teléfono',
-      value: '+52 (123) 456-7890',
-      link: 'tel:+521234567890',
+      value: '+57 311 455 7229',
+      link: 'tel:+573114557229',
     },
     {
       icon: MapPin,
-      title: 'Ubicación',
-      value: 'Bogota, Colombia',
+      title: 'Dirección',
+      value: 'Calle 19 # 65b – 67, Barrio Montevideo, Bogotá',
       link: null,
     },
     {
       icon: Clock,
-      title: 'Horario',
-      value: 'Lun - Vie: 9:00 - 18:00',
+      title: 'Horario de Atención',
+      value: 'Lun – Vie: 8:00 am – 5:00 pm',
       link: null,
     },
   ]
@@ -42,11 +42,11 @@ export default function ContactoPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
         <div className="text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Contáctanos
+            Hablemos de tu <span className="text-gradient">Evento</span>
           </h1>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            ¿Tienes un proyecto en mente? Estamos aquí para ayudarte.
-            Completa el formulario y nos pondremos en contacto contigo pronto.
+            ¿Tienes un evento en mente? Estamos aquí para hacerlo realidad.
+            Completa el formulario y uno de nuestros asesores se pondrá en contacto contigo.
           </p>
         </div>
       </section>
@@ -73,7 +73,7 @@ export default function ContactoPage() {
                       {info.link ? (
                         <a
                           href={info.link}
-                          className="text-gray-200 hover:text-pink-400 transition-colors"
+                          className="text-gray-200 hover:text-pink-400 transition-colors break-all"
                         >
                           {info.value}
                         </a>
@@ -86,25 +86,25 @@ export default function ContactoPage() {
               </div>
             </Card>
 
-            {/* Additional Info Card */}
+            {/* Por qué elegirnos */}
             <Card variant="gradient" className="border-pink-600/20">
               <h3 className="text-lg font-bold mb-3">¿Por qué elegirnos?</h3>
               <ul className="space-y-2 text-sm text-gray-300">
                 <li className="flex items-start">
                   <span className="w-1.5 h-1.5 bg-pink-400 rounded-full mr-2 mt-1.5 flex-shrink-0" />
-                  <span>Respuesta en menos de 24 horas</span>
+                  <span>Asesoría personalizada para tu evento</span>
                 </li>
                 <li className="flex items-start">
                   <span className="w-1.5 h-1.5 bg-pink-400 rounded-full mr-2 mt-1.5 flex-shrink-0" />
-                  <span>Consultoría inicial gratuita</span>
+                  <span>Espacios para hasta 5.000 personas</span>
                 </li>
                 <li className="flex items-start">
                   <span className="w-1.5 h-1.5 bg-pink-400 rounded-full mr-2 mt-1.5 flex-shrink-0" />
-                  <span>Cotización sin compromiso</span>
+                  <span>Producción audiovisual profesional incluida</span>
                 </li>
                 <li className="flex items-start">
                   <span className="w-1.5 h-1.5 bg-pink-400 rounded-full mr-2 mt-1.5 flex-shrink-0" />
-                  <span>Equipo experto y certificado</span>
+                  <span>Equipo con amplia experiencia en eventos</span>
                 </li>
               </ul>
             </Card>
@@ -121,43 +121,6 @@ export default function ContactoPage() {
           </div>
         </div>
       </div>
-
-      {/* FAQ Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Preguntas <span className="text-gradient">Frecuentes</span>
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[
-            {
-              q: '¿Cuánto tiempo toma un proyecto típico?',
-              a: 'Depende del alcance, pero la mayoría de proyectos se completan en 2-6 meses.',
-            },
-            {
-              q: '¿Ofrecen soporte post-implementación?',
-              a: 'Sí, ofrecemos planes de mantenimiento y soporte continuo para todos nuestros proyectos.',
-            },
-            {
-              q: '¿Trabajan con empresas de cualquier tamaño?',
-              a: 'Sí, desde startups hasta grandes corporaciones. Adaptamos nuestras soluciones a cada cliente.',
-            },
-            {
-              q: '¿Cómo se maneja la confidencialidad?',
-              a: 'Firmamos acuerdos de confidencialidad (NDA) antes de discutir detalles de tu proyecto.',
-            },
-          ].map((faq, index) => (
-            <Card key={index} variant="glass" className="p-6">
-              <h3 className="text-lg font-semibold text-gray-200 mb-2">
-                {faq.q}
-              </h3>
-              <p className="text-gray-400 text-sm">{faq.a}</p>
-            </Card>
-          ))}
-        </div>
-      </section>
     </div>
   )
 }

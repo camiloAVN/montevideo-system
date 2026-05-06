@@ -19,7 +19,17 @@ export const metadata: Metadata = {
     default: "Montevideo Convention Center",
     template: "%s | MCC",
   },
-  description: "Sistema de gestión para Montevideo Convention Center.",
+  description: "Centro de eventos con producción audiovisual profesional, shows de primer nivel y logística integral.",
+  icons: {
+    icon: [
+      { url: '/favicon/favicon.ico',        sizes: 'any'   },
+      { url: '/favicon/favicon-16x16.png',  sizes: '16x16', type: 'image/png' },
+      { url: '/favicon/favicon-32x32.png',  sizes: '32x32', type: 'image/png' },
+    ],
+    apple:    { url: '/favicon/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    shortcut: '/favicon/favicon.ico',
+  },
+  manifest: '/favicon/site.webmanifest',
 };
 
 export default function RootLayout({

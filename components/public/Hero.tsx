@@ -3,48 +3,42 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
-import { ArrowRight, Sparkles, Zap, Target } from 'lucide-react'
+import { ArrowRight, Video, Music, Star } from 'lucide-react'
 
 export function Hero() {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* Animated Background */}
       <div className="absolute inset-0 -z-10">
-        {/* Gradient Orbs */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-pink-600/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
-
-        {/* Grid Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center">
 
-          {/* Main Heading */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl sm:text-6xl lg:text-7xl font-bold mb-6"
           >
-            Transformamos Ideas en{' '}
-            <span className="text-gradient">Realidad Tecnológica</span>
+            Donde Cada Evento{' '}
+            <span className="text-gradient">Cobra Vida</span>
           </motion.h1>
 
-          {/* Description */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-md lg:text-xl text-gray-400 max-w-3xl mx-auto mb-10"
           >
-            Soluciones innovadoras en ingeniería robótica y desarrollo de software
-            para impulsar tu negocio al futuro. Experiencia, tecnología de punta y
-            resultados garantizados.
+            Centro de eventos con producción audiovisual profesional, shows de primer nivel
+            y logística integral. Creamos experiencias únicas que perduran en la memoria de
+            cada uno de tus invitados.
           </motion.p>
 
-          {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -53,18 +47,17 @@ export function Hero() {
           >
             <Link href="/contacto">
               <Button size="lg" variant="primary" className="hover-glow group">
-                Comenzar Proyecto
+                Reservar Espacio
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Link href="/soluciones">
+            <Link href="#espacios">
               <Button size="lg" variant="outline">
-                Ver Soluciones
+                Ver Espacios
               </Button>
             </Link>
           </motion.div>
 
-          {/* Features */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -73,19 +66,19 @@ export function Hero() {
           >
             {[
               {
-                icon: Zap,
-                title: 'Desarrollo Ágil',
-                description: 'Metodologías modernas para entrega rápida y eficiente',
+                icon: Video,
+                title: 'Producción Audiovisual',
+                description: 'Equipamiento de última generación para una experiencia visual y sonora verdaderamente excepcional',
               },
               {
-                icon: Target,
-                title: 'Soluciones Personalizadas',
-                description: 'Adaptadas a las necesidades específicas de tu negocio',
+                icon: Music,
+                title: 'Shows & Entretenimiento',
+                description: 'Artistas, espectáculos y entretenimiento de primer nivel adaptados a cada ocasión',
               },
               {
-                icon: Sparkles,
-                title: 'Tecnología de Punta',
-                description: 'Herramientas y frameworks más avanzados del mercado',
+                icon: Star,
+                title: 'Logística Integral',
+                description: 'Coordinación completa de todos los detalles para que solo te preocupes por disfrutar',
               },
             ].map((feature, index) => (
               <div
